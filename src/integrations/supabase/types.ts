@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      allocations: {
+        Row: {
+          created_at: string
+          dev_id: string
+          id: string
+          notes: string | null
+          position: number
+          sprint_id: string
+          status: Database["public"]["Enums"]["allocation_status"]
+          ticket_key: string | null
+          ticket_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dev_id: string
+          id?: string
+          notes?: string | null
+          position?: number
+          sprint_id: string
+          status?: Database["public"]["Enums"]["allocation_status"]
+          ticket_key?: string | null
+          ticket_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dev_id?: string
+          id?: string
+          notes?: string | null
+          position?: number
+          sprint_id?: string
+          status?: Database["public"]["Enums"]["allocation_status"]
+          ticket_key?: string | null
+          ticket_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allocations_dev_id_fkey"
+            columns: ["dev_id"]
+            isOneToOne: false
+            referencedRelation: "devs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "allocations_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devs: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          id: string
+          initials: string
+          name: string
+          position: number
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          initials?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          initials?: string
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      sprints: {
+        Row: {
+          code: string
+          created_at: string
+          days: number
+          end_date: string
+          id: string
+          position: number
+          quarter: string
+          start_date: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          days?: number
+          end_date: string
+          id?: string
+          position?: number
+          quarter?: string
+          start_date: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          days?: number
+          end_date?: string
+          id?: string
+          position?: number
+          quarter?: string
+          start_date?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +142,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      allocation_status:
+        | "planejado"
+        | "em_andamento"
+        | "bug"
+        | "evolutiva"
+        | "risco"
+        | "concluido"
+        | "ferias"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +276,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      allocation_status: [
+        "planejado",
+        "em_andamento",
+        "bug",
+        "evolutiva",
+        "risco",
+        "concluido",
+        "ferias",
+      ],
+    },
   },
 } as const
