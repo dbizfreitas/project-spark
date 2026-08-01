@@ -143,3 +143,100 @@
     color: var(--color-foreground);
   }
 }
+
+/* ---------------------------------------------------------------
+ * Sprint Board — design system
+ * Chrome: deep ink navy. Primary: teal. Accent: amber.
+ * Status tokens mirror the spreadsheet colour language, calmed down.
+ * ------------------------------------------------------------- */
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-grid-line: var(--grid-line);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+
+  --color-st-planejado: var(--st-planejado);
+  --color-st-planejado-fg: var(--st-planejado-fg);
+  --color-st-andamento: var(--st-andamento);
+  --color-st-andamento-fg: var(--st-andamento-fg);
+  --color-st-bug: var(--st-bug);
+  --color-st-bug-fg: var(--st-bug-fg);
+  --color-st-evolutiva: var(--st-evolutiva);
+  --color-st-evolutiva-fg: var(--st-evolutiva-fg);
+  --color-st-risco: var(--st-risco);
+  --color-st-risco-fg: var(--st-risco-fg);
+  --color-st-concluido: var(--st-concluido);
+  --color-st-concluido-fg: var(--st-concluido-fg);
+  --color-st-ferias: var(--st-ferias);
+  --color-st-ferias-fg: var(--st-ferias-fg);
+
+  --shadow-card: 0 1px 2px oklch(0.2 0.03 250 / 0.08), 0 1px 1px oklch(0.2 0.03 250 / 0.04);
+  --shadow-pop: 0 10px 30px -10px oklch(0.2 0.03 250 / 0.25);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  --background: oklch(0.982 0.004 240);
+  --foreground: oklch(0.24 0.03 255);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.965 0.006 245);
+  --grid-line: oklch(0.9 0.01 250);
+  --header: oklch(0.28 0.045 255);
+  --header-foreground: oklch(0.97 0.005 240);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.03 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.03 255);
+
+  --primary: oklch(0.52 0.1 195);
+  --primary-foreground: oklch(0.99 0.005 200);
+  --secondary: oklch(0.955 0.008 245);
+  --secondary-foreground: oklch(0.3 0.035 255);
+  --muted: oklch(0.955 0.008 245);
+  --muted-foreground: oklch(0.52 0.02 255);
+  --accent: oklch(0.94 0.03 90);
+  --accent-foreground: oklch(0.32 0.06 70);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.99 0.005 200);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.9 0.01 250);
+  --ring: oklch(0.52 0.1 195);
+
+  --st-planejado: oklch(0.94 0.012 250);
+  --st-planejado-fg: oklch(0.36 0.03 255);
+  --st-andamento: oklch(0.92 0.06 230);
+  --st-andamento-fg: oklch(0.36 0.09 245);
+  --st-bug: oklch(0.9 0.07 35);
+  --st-bug-fg: oklch(0.38 0.13 30);
+  --st-evolutiva: oklch(0.93 0.09 95);
+  --st-evolutiva-fg: oklch(0.38 0.09 75);
+  --st-risco: oklch(0.9 0.08 15);
+  --st-risco-fg: oklch(0.4 0.16 20);
+  --st-concluido: oklch(0.92 0.07 155);
+  --st-concluido-fg: oklch(0.36 0.09 155);
+  --st-ferias: oklch(0.93 0.05 175);
+  --st-ferias-fg: oklch(0.36 0.06 185);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility board-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--grid-line) transparent;
+}
