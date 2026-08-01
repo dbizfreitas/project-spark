@@ -1,24 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useSession } from "@/hooks/use-session";
+import { AuthCard } from "@/components/AuthCard";
+import { BoardGrid } from "@/components/BoardGrid";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Sprint Board — Alocação de demandas do time de devs" },
+      {
+        name: "description",
+        content:
+          "Substitua a planilha: quadro visual de sprints x devs com status coloridos, tickets, férias e realocação por arrastar e soltar.",
+      },
+      { property: "og:title", content: "Sprint Board — Alocação de demandas do time de devs" },
+      {
+        property: "og:description",
+        content:
+          "Quadro visual de sprints x devs com status coloridos, tickets, férias e realocação por arrastar e soltar.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
+  const { session, loading } = useSession();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!session) return <AuthCard />;
+
+  return <BoardGrid email={session.user.email ?? ""} />;
 }
