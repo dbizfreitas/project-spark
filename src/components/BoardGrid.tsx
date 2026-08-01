@@ -306,7 +306,7 @@ function SprintRow({
               e.preventDefault();
               setDragOver(key);
             }}
-            onDragLeave={() => setDragOver((prev: string | null) => (prev === key ? null : prev))}
+            onDragLeave={() => setDragOver(dragOver === key ? null : dragOver)}
             onDrop={(e) => {
               e.preventDefault();
               setDragOver(null);
