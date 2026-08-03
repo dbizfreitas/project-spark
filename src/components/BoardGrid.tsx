@@ -190,7 +190,7 @@ export function BoardGrid({ email }: { email: string }) {
             onAddDev={() => setDevDialog({ open: true, dev: null })}
           />
         ) : (
-          <div className="inline-block min-w-full overflow-hidden rounded-xl border border-grid-line bg-surface shadow-card">
+          <div className="inline-block min-w-full rounded-xl border border-grid-line bg-surface shadow-card">
             <div
               className="grid"
               style={{
