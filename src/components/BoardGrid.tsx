@@ -117,8 +117,8 @@ export function BoardGrid({ email }: { email: string }) {
   const loading = devsQ.isLoading || sprintsQ.isLoading || allocQ.isLoading;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-header text-header-foreground">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
+      <header className="border-b border-border bg-header text-header-foreground">
         <div className="flex flex-wrap items-center gap-3 px-4 py-3">
           <span className="flex size-9 items-center justify-center rounded-lg bg-white/10">
             <LayoutGrid className="size-4" />
@@ -180,7 +180,7 @@ export function BoardGrid({ email }: { email: string }) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto board-scroll p-4">
+      <main className="min-h-0 flex-1 p-4">
         {loading ? (
           <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
         ) : sprints.length === 0 || devs.length === 0 ? (
@@ -190,21 +190,22 @@ export function BoardGrid({ email }: { email: string }) {
             onAddDev={() => setDevDialog({ open: true, dev: null })}
           />
         ) : (
-          <div className="inline-block min-w-full rounded-xl border border-grid-line bg-surface shadow-card">
+          <div className="h-full w-full overflow-hidden rounded-xl border border-grid-line bg-surface shadow-card">
             <div
-              className="grid"
+              className="grid h-full w-full"
               style={{
-                gridTemplateColumns: `clamp(100px, 22vw, 220px) repeat(${devs.length}, minmax(clamp(150px, 32vw, 230px), 1fr))`,
+                gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
+                gridTemplateRows: `auto repeat(${sprints.length}, minmax(0, 1fr))`,
               }}
             >
-              <div className="sticky left-0 top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Sprint
               </div>
               {devs.map((d) => (
                 <button
                   key={d.id}
                   onClick={() => setDevDialog({ open: true, dev: d })}
-                  className="group sticky top-0 z-10 flex items-center gap-2 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-left last:border-r-0 hover:bg-secondary"
+                  className="group flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-left last:border-r-0 hover:bg-secondary"
                 >
                   <span
                     className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
@@ -281,7 +282,7 @@ function SprintRow({
     <>
       <button
         onClick={onEditSprint}
-        className="group sticky left-0 z-10 border-b border-r border-grid-line bg-surface-2 px-3 py-3 text-left hover:bg-secondary"
+        className="group overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-1.5 text-left hover:bg-secondary"
       >
         <div className="flex items-center gap-2">
           {sprint.quarter ? (
@@ -289,13 +290,12 @@ function SprintRow({
               {sprint.quarter}
             </span>
           ) : null}
-          <span className="text-sm font-semibold">{sprint.code}</span>
-          <Pencil className="ml-auto size-3 opacity-0 transition-opacity group-hover:opacity-60" />
+          <span className="truncate text-sm font-semibold">{sprint.code}</span>
+          <Pencil className="ml-auto size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="truncate text-[11px] text-muted-foreground">
           {formatRange(sprint.start_date, sprint.end_date)}
         </p>
-        <p className="text-[11px] text-muted-foreground">{sprint.days} dias</p>
       </button>
 
       {devs.map((d) => {
@@ -315,21 +315,23 @@ function SprintRow({
               const id = e.dataTransfer.getData("text/allocation");
               if (id) onDrop(id, d.id);
             }}
-            className={`group/cell relative min-h-24 space-y-1.5 border-b border-r border-grid-line p-1.5 last:border-r-0 ${
+            className={`group/cell relative flex flex-col gap-1 overflow-hidden border-b border-r border-grid-line p-1.5 last:border-r-0 ${
               dragOver === key ? "bg-primary/10 ring-1 ring-inset ring-primary" : ""
             }`}
           >
-            {items.map((a) => (
-              <AllocationChip
-                key={a.id}
-                allocation={a}
-                dimmed={!matches(a)}
-                onEdit={() => onEdit(a)}
-              />
-            ))}
+            <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+              {items.map((a) => (
+                <AllocationChip
+                  key={a.id}
+                  allocation={a}
+                  dimmed={!matches(a)}
+                  onEdit={() => onEdit(a)}
+                />
+              ))}
+            </div>
             <button
               onClick={() => onAdd(d.id)}
-              className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-grid-line py-1 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:border-primary hover:text-primary group-hover/cell:opacity-100"
+              className="flex w-full shrink-0 items-center justify-center gap-1 rounded-md border border-dashed border-grid-line py-1 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:border-primary hover:text-primary group-hover/cell:opacity-100"
             >
               <Plus className="size-3" /> demanda
             </button>
@@ -355,11 +357,11 @@ function AllocationChip({
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/allocation", allocation.id)}
       onClick={onEdit}
-      className={`cursor-grab rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${info.chip} ${
+      className={`shrink-0 cursor-grab overflow-hidden rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${info.chip} ${
         dimmed ? "opacity-25" : ""
       }`}
     >
-      <p className="text-xs font-medium leading-snug">{allocation.title}</p>
+      <p className="line-clamp-2 text-xs font-medium leading-snug">{allocation.title}</p>
       {allocation.ticket_key || allocation.notes ? (
         <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-80">
           {allocation.ticket_key ? (
