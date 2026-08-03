@@ -193,7 +193,9 @@ export function BoardGrid({ email }: { email: string }) {
           <div className="inline-block min-w-full overflow-hidden rounded-xl border border-grid-line bg-surface shadow-card">
             <div
               className="grid"
-              style={{ gridTemplateColumns: `220px repeat(${devs.length}, minmax(230px, 1fr))` }}
+              style={{
+                gridTemplateColumns: `clamp(100px, 22vw, 220px) repeat(${devs.length}, minmax(clamp(150px, 32vw, 230px), 1fr))`,
+              }}
             >
               <div className="sticky left-0 top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Sprint
