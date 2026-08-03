@@ -22,6 +22,7 @@ import {
   type AllocationStatus,
   type Dev,
   type Sprint,
+  type Team,
 } from "@/lib/board";
 import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDialog";
 import { DevDialog } from "./DevDialog";
@@ -52,6 +53,15 @@ export function BoardGrid({ email }: { email: string }) {
         .order("name");
       if (error) throw error;
       return data as Dev[];
+    },
+  });
+
+  const teamsQ = useQuery({
+    queryKey: ["teams"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("teams").select("*").order("position");
+      if (error) throw error;
+      return data as Team[];
     },
   });
 
@@ -89,9 +99,20 @@ export function BoardGrid({ email }: { email: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const devs = devsQ.data ?? [];
+  const teams = teamsQ.data ?? [];
   const sprints = sprintsQ.data ?? [];
   const allocations = allocQ.data ?? [];
+
+  const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams]);
+  const teamPosition = useMemo(() => new Map(teams.map((t, i) => [t.id, i])), [teams]);
+
+  const devs = useMemo(() => {
+    const list = devsQ.data ?? [];
+    return [...list].sort((a, b) => {
+      const teamDiff = (teamPosition.get(a.team_id) ?? 0) - (teamPosition.get(b.team_id) ?? 0);
+      return teamDiff !== 0 ? teamDiff : a.position - b.position;
+    });
+  }, [devsQ.data, teamPosition]);
 
   const term = search.trim().toLowerCase();
   const matches = (a: Allocation) => {
@@ -114,7 +135,7 @@ export function BoardGrid({ email }: { email: string }) {
     return map;
   }, [allocations]);
 
-  const loading = devsQ.isLoading || sprintsQ.isLoading || allocQ.isLoading;
+  const loading = devsQ.isLoading || teamsQ.isLoading || sprintsQ.isLoading || allocQ.isLoading;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -201,22 +222,33 @@ export function BoardGrid({ email }: { email: string }) {
               <div className="border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Sprint
               </div>
-              {devs.map((d) => (
-                <button
-                  key={d.id}
-                  onClick={() => setDevDialog({ open: true, dev: d })}
-                  className="group flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-left last:border-r-0 hover:bg-secondary"
-                >
-                  <span
-                    className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                    style={{ backgroundColor: d.color }}
+              {devs.map((d) => {
+                const team = teamById.get(d.team_id);
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => setDevDialog({ open: true, dev: d })}
+                    style={{ boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}` }}
+                    className="group flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
                   >
-                    {d.initials || d.name.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="truncate text-sm font-medium">{d.name}</span>
-                  <Pencil className="ml-auto size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
-                </button>
-              ))}
+                    <span
+                      className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                      style={{ backgroundColor: team?.color ?? "#94a3b8" }}
+                    >
+                      {d.initials || d.name.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-medium">{d.name}</span>
+                      {team ? (
+                        <span className="truncate text-[10px] text-muted-foreground">
+                          {team.name}
+                        </span>
+                      ) : null}
+                    </span>
+                    <Pencil className="ml-auto size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+                  </button>
+                );
+              })}
 
               {sprints.map((s) => (
                 <SprintRow

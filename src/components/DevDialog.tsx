@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -11,9 +11,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
-import { DEV_COLORS, initialsFrom, type Dev } from "@/lib/board";
+import { TEAM_COLORS, initialsFrom, type Dev, type Team } from "@/lib/board";
+
+const NEW_TEAM = "__new__";
 
 export function DevDialog({
   dev,
@@ -28,20 +37,50 @@ export function DevDialog({
 }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
-  const [color, setColor] = useState(DEV_COLORS[0]!);
+  const [teamId, setTeamId] = useState<string>(NEW_TEAM);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamColor, setNewTeamColor] = useState(TEAM_COLORS[0]!);
+
+  const teamsQ = useQuery({
+    queryKey: ["teams"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("teams").select("*").order("position");
+      if (error) throw error;
+      return data as Team[];
+    },
+  });
+  const teams = teamsQ.data ?? [];
 
   useEffect(() => {
     if (!open) return;
     setName(dev?.name ?? "");
-    setColor(dev?.color ?? DEV_COLORS[count % DEV_COLORS.length]!);
-  }, [open, dev, count]);
+    setTeamId(dev?.team_id ?? (teams.length > 0 ? teams[0]!.id : NEW_TEAM));
+    setNewTeamName("");
+    setNewTeamColor(TEAM_COLORS[teams.length % TEAM_COLORS.length]!);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, dev]);
 
   const save = useMutation({
     mutationFn: async () => {
+      let finalTeamId = teamId;
+      if (teamId === NEW_TEAM) {
+        const teamRes = await supabase
+          .from("teams")
+          .insert({
+            name: newTeamName.trim(),
+            color: newTeamColor,
+            position: teams.length,
+          })
+          .select("id")
+          .single();
+        if (teamRes.error) throw teamRes.error;
+        finalTeamId = teamRes.data.id;
+      }
+
       const payload = {
         name: name.trim(),
         initials: initialsFrom(name),
-        color,
+        team_id: finalTeamId,
         position: dev?.position ?? count,
       };
       const res = dev
@@ -51,10 +90,14 @@ export function DevDialog({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["devs"] });
+      qc.invalidateQueries({ queryKey: ["teams"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const canSave =
+    name.trim().length > 0 && (teamId !== NEW_TEAM || newTeamName.trim().length > 0);
 
   const remove = useMutation({
     mutationFn: async () => {
@@ -88,23 +131,59 @@ export function DevDialog({
               autoFocus
             />
           </div>
-          <div className="space-y-2">
-            <Label>Cor</Label>
-            <div className="flex flex-wrap gap-2">
-              {DEV_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  style={{ backgroundColor: c }}
-                  className={`size-7 rounded-full transition-transform ${
-                    color === c ? "scale-110 ring-2 ring-ring ring-offset-2" : ""
-                  }`}
-                  aria-label={`Cor ${c}`}
-                />
-              ))}
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="dteam">Time</Label>
+            <Select value={teamId} onValueChange={setTeamId}>
+              <SelectTrigger id="dteam">
+                <SelectValue placeholder="Selecione um time" />
+              </SelectTrigger>
+              <SelectContent>
+                {teams.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: t.color }}
+                      />
+                      {t.name}
+                    </span>
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_TEAM}>+ Criar novo time</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {teamId === NEW_TEAM ? (
+            <div className="space-y-4 rounded-lg border border-dashed border-grid-line p-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="tname">Nome do time</Label>
+                <Input
+                  id="tname"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="Ex.: PIM"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cor do time</Label>
+                <div className="flex flex-wrap gap-2">
+                  {TEAM_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewTeamColor(c)}
+                      style={{ backgroundColor: c }}
+                      className={`size-7 rounded-full transition-transform ${
+                        newTeamColor === c ? "scale-110 ring-2 ring-ring ring-offset-2" : ""
+                      }`}
+                      aria-label={`Cor ${c}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <DialogFooter className="sm:justify-between">
@@ -123,7 +202,7 @@ export function DevDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => save.mutate()} disabled={!name.trim() || save.isPending}>
+            <Button onClick={() => save.mutate()} disabled={!canSave || save.isPending}>
               Salvar
             </Button>
           </div>

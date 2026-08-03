@@ -7,11 +7,18 @@ export type AllocationStatus =
   | "concluido"
   | "ferias";
 
+export type Team = {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+};
+
 export type Dev = {
   id: string;
   name: string;
   initials: string;
-  color: string;
+  team_id: string;
   position: number;
   active: boolean;
 };
@@ -108,7 +115,7 @@ export function initialsFrom(name: string) {
     .join("");
 }
 
-export const DEV_COLORS = [
+export const TEAM_COLORS = [
   "#0f766e",
   "#1d4ed8",
   "#b45309",

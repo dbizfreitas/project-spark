@@ -74,28 +74,60 @@ export type Database = {
       devs: {
         Row: {
           active: boolean
-          color: string
           created_at: string
           id: string
           initials: string
           name: string
           position: number
+          team_id: string
         }
         Insert: {
           active?: boolean
-          color?: string
           created_at?: string
           id?: string
           initials?: string
           name: string
           position?: number
+          team_id: string
         }
         Update: {
           active?: boolean
-          color?: string
           created_at?: string
           id?: string
           initials?: string
+          name?: string
+          position?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
           name?: string
           position?: number
         }
