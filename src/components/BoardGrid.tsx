@@ -357,6 +357,7 @@ function SprintRow({
                   key={a.id}
                   allocation={a}
                   dimmed={!matches(a)}
+                  allowWrap={items.length === 1}
                   onEdit={() => onEdit(a)}
                 />
               ))}
@@ -377,10 +378,12 @@ function SprintRow({
 function AllocationChip({
   allocation,
   dimmed,
+  allowWrap,
   onEdit,
 }: {
   allocation: Allocation;
   dimmed: boolean;
+  allowWrap: boolean;
   onEdit: () => void;
 }) {
   const info = statusInfo(allocation.status);
@@ -393,7 +396,11 @@ function AllocationChip({
         dimmed ? "opacity-25" : ""
       }`}
     >
-      <p className="truncate text-xs font-medium leading-snug">{allocation.title}</p>
+      <p
+        className={`text-xs font-medium leading-snug ${allowWrap ? "line-clamp-3" : "truncate"}`}
+      >
+        {allocation.title}
+      </p>
       {allocation.ticket_key || allocation.notes ? (
         <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-80">
           {allocation.ticket_key ? (
