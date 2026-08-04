@@ -228,7 +228,10 @@ export function BoardGrid({ email }: { email: string }) {
                   <button
                     key={d.id}
                     onClick={() => setDevDialog({ open: true, dev: d })}
-                    style={{ boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}` }}
+                    style={{
+                      boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}`,
+                      containerType: "inline-size",
+                    }}
                     className="group flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
                   >
                     <span
@@ -238,9 +241,17 @@ export function BoardGrid({ email }: { email: string }) {
                       {d.initials || d.name.slice(0, 2).toUpperCase()}
                     </span>
                     <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm font-medium">{d.name}</span>
+                      <span
+                        className="truncate font-medium"
+                        style={{ fontSize: "clamp(9px, 6cqi, 14px)" }}
+                      >
+                        {d.name}
+                      </span>
                       {team ? (
-                        <span className="truncate text-[10px] text-muted-foreground">
+                        <span
+                          className="truncate text-muted-foreground"
+                          style={{ fontSize: "clamp(7px, 4.5cqi, 10px)" }}
+                        >
                           {team.name}
                         </span>
                       ) : null}
@@ -314,18 +325,30 @@ function SprintRow({
     <>
       <button
         onClick={onEditSprint}
+        style={{ containerType: "size" }}
         className="group overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-1.5 text-left hover:bg-secondary"
       >
         <div className="flex items-center gap-2">
           {sprint.quarter ? (
-            <span className="rounded bg-header px-1.5 py-0.5 text-[10px] font-semibold text-header-foreground">
+            <span
+              className="rounded bg-header px-1.5 py-0.5 font-semibold text-header-foreground"
+              style={{ fontSize: "clamp(7px, min(3.5cqi, 9cqb), 10px)" }}
+            >
               {sprint.quarter}
             </span>
           ) : null}
-          <span className="truncate text-sm font-semibold">{sprint.code}</span>
+          <span
+            className="truncate font-semibold"
+            style={{ fontSize: "clamp(9px, min(5.5cqi, 11cqb), 14px)" }}
+          >
+            {sprint.code}
+          </span>
           <Pencil className="ml-auto size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
         </div>
-        <p className="truncate text-[11px] text-muted-foreground">
+        <p
+          className="truncate text-muted-foreground"
+          style={{ fontSize: "clamp(7px, min(4cqi, 8cqb), 11px)" }}
+        >
           {formatRange(sprint.start_date, sprint.end_date)}
         </p>
       </button>
@@ -351,7 +374,10 @@ function SprintRow({
               dragOver === key ? "bg-primary/10 ring-1 ring-inset ring-primary" : ""
             }`}
           >
-            <div className="flex h-full w-full flex-col gap-1 overflow-hidden">
+            <div
+              className="flex h-full w-full flex-col gap-1 overflow-hidden"
+              style={{ containerType: "size" }}
+            >
               {items.map((a) => (
                 <AllocationChip
                   key={a.id}
@@ -393,9 +419,17 @@ function AllocationChip({
         dimmed ? "opacity-25" : ""
       }`}
     >
-      <p className="line-clamp-2 text-xs font-medium leading-snug">{allocation.title}</p>
+      <p
+        className="line-clamp-2 font-medium leading-snug"
+        style={{ fontSize: "clamp(8px, min(3cqi, 10cqb), 13px)" }}
+      >
+        {allocation.title}
+      </p>
       {allocation.ticket_key || allocation.notes ? (
-        <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-80">
+        <div
+          className="mt-1 flex items-center gap-1.5 opacity-80"
+          style={{ fontSize: "clamp(7px, min(2.4cqi, 8cqb), 10px)" }}
+        >
           {allocation.ticket_key ? (
             allocation.ticket_url ? (
               <a
