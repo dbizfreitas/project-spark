@@ -109,30 +109,6 @@ export type Database = {
           },
         ]
       }
-      teams: {
-        Row: {
-          color: string
-          created_at: string
-          id: string
-          name: string
-          position: number
-        }
-        Insert: {
-          color?: string
-          created_at?: string
-          id?: string
-          name: string
-          position?: number
-        }
-        Update: {
-          color?: string
-          created_at?: string
-          id?: string
-          name?: string
-          position?: number
-        }
-        Relationships: []
-      }
       sprints: {
         Row: {
           code: string
@@ -163,6 +139,30 @@ export type Database = {
           position?: number
           quarter?: string
           start_date?: string
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
         }
         Relationships: []
       }
