@@ -25,6 +25,7 @@ import {
   type Team,
 } from "@/lib/board";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDialog";
 import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
@@ -144,157 +145,163 @@ export function BoardGrid({ email }: { email: string }) {
   const loading = devsQ.isLoading || teamsQ.isLoading || sprintsQ.isLoading || allocQ.isLoading;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <header className="border-b border-border bg-header text-header-foreground">
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-white/10">
-            <LayoutGrid className="size-4" />
-          </span>
-          <div className="mr-auto">
-            <h1 className="text-base font-semibold leading-tight">Sprint Board</h1>
-            <p className="text-[11px] text-header-foreground/60">Alocação de demandas do time</p>
-          </div>
-
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-header-foreground/50" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar demanda ou ticket"
-              className="h-9 w-56 border-white/15 bg-white/10 pl-8 text-header-foreground placeholder:text-header-foreground/50"
-            />
-          </div>
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setSprintDialog({ open: true, sprint: null })}
-          >
-            <CalendarPlus className="size-4" /> Sprint
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setDevDialog({ open: true, dev: null })}
-          >
-            <UserPlus className="size-4" /> Pessoa
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-header-foreground hover:bg-white/10 hover:text-header-foreground"
-            onClick={() => supabase.auth.signOut()}
-            title={email}
-          >
-            <LogOut className="size-4" />
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
-          <FilterChip active={filter === "todos"} onClick={() => setFilter("todos")}>
-            Todos
-          </FilterChip>
-          {STATUS_LIST.map((s) => (
-            <FilterChip
-              key={s.value}
-              active={filter === s.value}
-              onClick={() => setFilter(s.value)}
-            >
-              <span className={`size-2 rounded-full ${s.dot}`} />
-              {s.label}
-            </FilterChip>
-          ))}
-        </div>
-      </header>
-
-      <main className="min-h-0 flex-1 p-4">
-        {loading ? (
-          <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
-        ) : sprints.length === 0 || devs.length === 0 ? (
-          <EmptyState
-            hasDevs={devs.length > 0}
-            onAddSprint={() => setSprintDialog({ open: true, sprint: null })}
-            onAddDev={() => setDevDialog({ open: true, dev: null })}
-          />
-        ) : (
-          <div className="h-full w-full overflow-x-hidden overflow-y-auto rounded-xl border border-grid-line bg-surface shadow-card board-scroll">
-            <div
-              className="grid w-full"
-              style={{
-                gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
-                gridTemplateRows: [
-                  "auto",
-                  ...sprints.map((s) =>
-                    sprintsWithCards.has(s.id) ? "minmax(104px, auto)" : "auto",
-                  ),
-                ].join(" "),
-              }}
-            >
-              <div className="sticky top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Sprint
-              </div>
-              {devs.map((d) => {
-                const team = teamById.get(d.team_id);
-                return (
-                  <button
-                    key={d.id}
-                    onClick={() => setDevDialog({ open: true, dev: d })}
-                    style={{ boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}` }}
-                    className="group sticky top-0 z-10 flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
-                  >
-                    <span
-                      className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                      style={{ backgroundColor: team?.color ?? "#94a3b8" }}
-                    >
-                      {d.initials || d.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm font-medium">{d.name}</span>
-                      {team ? (
-                        <span className="truncate text-[10px] text-muted-foreground">
-                          {team.name}
-                        </span>
-                      ) : null}
-                    </span>
-                    <Pencil className="ml-auto size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
-                  </button>
-                );
-              })}
-
-              {sprints.map((s) => (
-                <SprintRow
-                  key={s.id}
-                  sprint={s}
-                  devs={devs}
-                  byCell={byCell}
-                  matches={matches}
-                  dragOver={dragOver}
-                  setDragOver={setDragOver}
-                  onEditSprint={() => setSprintDialog({ open: true, sprint: s })}
-                  onAdd={(devId) => setDraft({ sprint_id: s.id, dev_id: devId })}
-                  onEdit={(a) => setDraft(toDraft(a))}
-                  onDrop={(id, devId) => move.mutate({ id, sprint_id: s.id, dev_id: devId })}
-                />
-              ))}
+    <TooltipProvider delayDuration={300}>
+      <div className="flex h-screen flex-col overflow-hidden bg-background">
+        <header className="border-b border-border bg-header text-header-foreground">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white/10">
+              <LayoutGrid className="size-4" />
+            </span>
+            <div className="mr-auto">
+              <h1 className="text-base font-semibold leading-tight">Sprint Board</h1>
+              <p className="text-[11px] text-header-foreground/60">Alocação de demandas do time</p>
             </div>
-          </div>
-        )}
-      </main>
 
-      <AllocationDialog draft={draft} onOpenChange={(o) => !o && setDraft(null)} />
-      <DevDialog
-        dev={devDialog.dev}
-        open={devDialog.open}
-        count={devs.length}
-        onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
-      />
-      <SprintDialog
-        sprint={sprintDialog.sprint}
-        open={sprintDialog.open}
-        count={sprints.length}
-        onOpenChange={(o) => setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })}
-      />
-    </div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-header-foreground/50" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar demanda ou ticket"
+                className="h-9 w-56 border-white/15 bg-white/10 pl-8 text-header-foreground placeholder:text-header-foreground/50"
+              />
+            </div>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setSprintDialog({ open: true, sprint: null })}
+            >
+              <CalendarPlus className="size-4" /> Sprint
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setDevDialog({ open: true, dev: null })}
+            >
+              <UserPlus className="size-4" /> Pessoa
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-header-foreground hover:bg-white/10 hover:text-header-foreground"
+              onClick={() => supabase.auth.signOut()}
+              title={email}
+            >
+              <LogOut className="size-4" />
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
+            <FilterChip active={filter === "todos"} onClick={() => setFilter("todos")}>
+              Todos
+            </FilterChip>
+            {STATUS_LIST.map((s) => (
+              <FilterChip
+                key={s.value}
+                active={filter === s.value}
+                onClick={() => setFilter(s.value)}
+              >
+                <span className={`size-2 rounded-full ${s.dot}`} />
+                {s.label}
+              </FilterChip>
+            ))}
+          </div>
+        </header>
+
+        <main className="min-h-0 flex-1 p-4">
+          {loading ? (
+            <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
+          ) : sprints.length === 0 || devs.length === 0 ? (
+            <EmptyState
+              hasDevs={devs.length > 0}
+              onAddSprint={() => setSprintDialog({ open: true, sprint: null })}
+              onAddDev={() => setDevDialog({ open: true, dev: null })}
+            />
+          ) : (
+            <div className="h-full w-full overflow-x-hidden overflow-y-auto rounded-xl border border-grid-line bg-surface shadow-card board-scroll">
+              <div
+                className="grid w-full"
+                style={{
+                  gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
+                  gridTemplateRows: [
+                    "auto",
+                    ...sprints.map((s) =>
+                      sprintsWithCards.has(s.id) ? "minmax(104px, auto)" : "auto",
+                    ),
+                  ].join(" "),
+                }}
+              >
+                <div className="sticky top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Sprint
+                </div>
+                {devs.map((d) => {
+                  const team = teamById.get(d.team_id);
+                  return (
+                    <Tooltip key={d.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setDevDialog({ open: true, dev: d })}
+                          style={{ boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}` }}
+                          className="group sticky top-0 z-10 flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
+                        >
+                          <span
+                            className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                            style={{ backgroundColor: team?.color ?? "#94a3b8" }}
+                          >
+                            {d.initials || d.name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <span className="flex min-w-0 flex-col">
+                            <span className="truncate text-sm font-medium">{d.name}</span>
+                            {team ? (
+                              <span className="truncate text-[10px] text-muted-foreground">
+                                {team.name}
+                              </span>
+                            ) : null}
+                          </span>
+                          <Pencil className="ml-auto size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{d.name}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+
+                {sprints.map((s) => (
+                  <SprintRow
+                    key={s.id}
+                    sprint={s}
+                    devs={devs}
+                    byCell={byCell}
+                    matches={matches}
+                    dragOver={dragOver}
+                    setDragOver={setDragOver}
+                    onEditSprint={() => setSprintDialog({ open: true, sprint: s })}
+                    onAdd={(devId) => setDraft({ sprint_id: s.id, dev_id: devId })}
+                    onEdit={(a) => setDraft(toDraft(a))}
+                    onDrop={(id, devId) => move.mutate({ id, sprint_id: s.id, dev_id: devId })}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+
+        <AllocationDialog draft={draft} onOpenChange={(o) => !o && setDraft(null)} />
+        <DevDialog
+          dev={devDialog.dev}
+          open={devDialog.open}
+          count={devs.length}
+          onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
+        />
+        <SprintDialog
+          sprint={sprintDialog.sprint}
+          open={sprintDialog.open}
+          count={sprints.length}
+          onOpenChange={(o) => setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })}
+        />
+      </div>
+    </TooltipProvider>
   );
 }
 
