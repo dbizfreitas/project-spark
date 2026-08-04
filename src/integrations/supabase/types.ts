@@ -192,14 +192,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_edit_board: { Args: { _user_id: string }; Returns: boolean }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       allocation_status:
