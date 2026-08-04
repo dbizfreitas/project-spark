@@ -217,7 +217,7 @@ export function BoardGrid({ email }: { email: string }) {
               className="grid h-full w-full"
               style={{
                 gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
-                gridTemplateRows: `auto repeat(${sprints.length}, minmax(104px, 1fr))`,
+                gridTemplateRows: `auto repeat(${sprints.length}, minmax(104px, auto))`,
               }}
             >
               <div className="sticky top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -352,7 +352,7 @@ function SprintRow({
               dragOver === key ? "bg-primary/10 ring-1 ring-inset ring-primary" : ""
             }`}
           >
-            <div className="flex h-full w-full flex-col gap-1 overflow-hidden">
+            <div className="flex min-h-full w-full flex-col gap-1">
               {items.map((a) => (
                 <AllocationChip
                   key={a.id}
