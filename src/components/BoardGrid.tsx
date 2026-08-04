@@ -393,7 +393,7 @@ function AllocationChip({
         dimmed ? "opacity-25" : ""
       }`}
     >
-      <p className="line-clamp-2 text-xs font-medium leading-snug">{allocation.title}</p>
+      <p className="truncate text-xs font-medium leading-snug">{allocation.title}</p>
       {allocation.ticket_key || allocation.notes ? (
         <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-80">
           {allocation.ticket_key ? (
