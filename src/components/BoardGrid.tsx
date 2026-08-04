@@ -136,6 +136,11 @@ export function BoardGrid({ email }: { email: string }) {
     return map;
   }, [allocations]);
 
+  const sprintsWithCards = useMemo(
+    () => new Set(allocations.map((a) => a.sprint_id)),
+    [allocations],
+  );
+
   const loading = devsQ.isLoading || teamsQ.isLoading || sprintsQ.isLoading || allocQ.isLoading;
 
   return (
@@ -217,7 +222,12 @@ export function BoardGrid({ email }: { email: string }) {
               className="grid h-full w-full"
               style={{
                 gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
-                gridTemplateRows: `auto repeat(${sprints.length}, minmax(104px, auto))`,
+                gridTemplateRows: [
+                  "auto",
+                  ...sprints.map((s) =>
+                    sprintsWithCards.has(s.id) ? "minmax(104px, auto)" : "auto",
+                  ),
+                ].join(" "),
               }}
             >
               <div className="sticky top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
