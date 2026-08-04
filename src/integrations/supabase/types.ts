@@ -109,30 +109,6 @@ export type Database = {
           },
         ]
       }
-      teams: {
-        Row: {
-          color: string
-          created_at: string
-          id: string
-          name: string
-          position: number
-        }
-        Insert: {
-          color?: string
-          created_at?: string
-          id?: string
-          name: string
-          position?: number
-        }
-        Update: {
-          color?: string
-          created_at?: string
-          id?: string
-          name?: string
-          position?: number
-        }
-        Relationships: []
-      }
       sprints: {
         Row: {
           code: string
@@ -166,6 +142,30 @@ export type Database = {
         }
         Relationships: []
       }
+      teams: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -192,14 +192,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_edit_board: { Args: { _user_id: string }; Returns: boolean }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       allocation_status:
