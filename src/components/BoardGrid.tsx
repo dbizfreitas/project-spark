@@ -351,7 +351,7 @@ function SprintRow({
               dragOver === key ? "bg-primary/10 ring-1 ring-inset ring-primary" : ""
             }`}
           >
-            <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+            <div className="flex h-full w-full flex-col gap-1 overflow-hidden">
               {items.map((a) => (
                 <AllocationChip
                   key={a.id}
@@ -363,7 +363,7 @@ function SprintRow({
             </div>
             <button
               onClick={() => onAdd(d.id)}
-              className="flex w-full shrink-0 items-center justify-center gap-1 rounded-md border border-dashed border-grid-line py-1 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:border-primary hover:text-primary group-hover/cell:opacity-100"
+              className="absolute inset-x-1.5 bottom-1.5 z-10 flex items-center justify-center gap-1 rounded-md border border-dashed border-grid-line bg-surface/90 py-1 text-[11px] text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity hover:border-primary hover:text-primary group-hover/cell:opacity-100"
             >
               <Plus className="size-3" /> demanda
             </button>
