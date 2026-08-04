@@ -24,6 +24,7 @@ import {
   type Sprint,
   type Team,
 } from "@/lib/board";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDialog";
 import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
@@ -347,7 +348,7 @@ function SprintRow({
               const id = e.dataTransfer.getData("text/allocation");
               if (id) onDrop(id, d.id);
             }}
-            className={`group/cell relative flex flex-col gap-1 overflow-hidden border-b border-r border-grid-line p-1.5 last:border-r-0 ${
+            className={`group/cell relative flex flex-col gap-1 border-b border-r border-grid-line p-1.5 last:border-r-0 ${
               dragOver === key ? "bg-primary/10 ring-1 ring-inset ring-primary" : ""
             }`}
           >
@@ -364,7 +365,7 @@ function SprintRow({
             </div>
             <button
               onClick={() => onAdd(d.id)}
-              className="absolute inset-x-1.5 bottom-1.5 z-10 flex items-center justify-center gap-1 rounded-md border border-dashed border-grid-line bg-surface/90 py-1 text-[11px] text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity hover:border-primary hover:text-primary group-hover/cell:opacity-100"
+              className="absolute inset-x-1.5 top-full z-10 mt-1 flex items-center justify-center gap-1 rounded-md border border-dashed border-grid-line bg-surface/90 py-1 text-[11px] text-muted-foreground opacity-0 shadow-card backdrop-blur-sm transition-opacity hover:border-primary hover:text-primary group-hover/cell:opacity-100"
             >
               <Plus className="size-3" /> demanda
             </button>
@@ -388,41 +389,71 @@ function AllocationChip({
 }) {
   const info = statusInfo(allocation.status);
   return (
-    <div
-      draggable
-      onDragStart={(e) => e.dataTransfer.setData("text/allocation", allocation.id)}
-      onClick={onEdit}
-      className={`shrink-0 cursor-grab overflow-hidden rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${info.chip} ${
-        dimmed ? "opacity-25" : ""
-      }`}
-    >
-      <p
-        className={`text-xs font-medium leading-snug ${allowWrap ? "line-clamp-3" : "truncate"}`}
-      >
-        {allocation.title}
-      </p>
-      {allocation.ticket_key || allocation.notes ? (
-        <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-80">
+    <HoverCard openDelay={300}>
+      <HoverCardTrigger asChild>
+        <div
+          draggable
+          onDragStart={(e) => e.dataTransfer.setData("text/allocation", allocation.id)}
+          onClick={onEdit}
+          className={`shrink-0 cursor-grab overflow-hidden rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${info.chip} ${
+            dimmed ? "opacity-25" : ""
+          }`}
+        >
+          <p
+            className={`text-xs font-medium leading-snug ${allowWrap ? "line-clamp-4" : "truncate"}`}
+          >
+            {allocation.title}
+          </p>
+          {allocation.ticket_key || allocation.notes ? (
+            <div className="mt-1 flex items-center gap-1.5 text-[10px] opacity-80">
+              {allocation.ticket_key ? (
+                allocation.ticket_url ? (
+                  <a
+                    href={allocation.ticket_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-0.5 font-mono underline underline-offset-2"
+                  >
+                    {allocation.ticket_key}
+                    <ExternalLink className="size-2.5" />
+                  </a>
+                ) : (
+                  <span className="font-mono">{allocation.ticket_key}</span>
+                )
+              ) : null}
+              {allocation.notes ? <span className="truncate">{allocation.notes}</span> : null}
+            </div>
+          ) : null}
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent side="right" className="w-72 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${info.chip}`}>
+            {info.label}
+          </span>
           {allocation.ticket_key ? (
             allocation.ticket_url ? (
               <a
                 href={allocation.ticket_url}
                 target="_blank"
                 rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-0.5 font-mono underline underline-offset-2"
+                className="inline-flex items-center gap-0.5 font-mono text-xs underline underline-offset-2"
               >
                 {allocation.ticket_key}
                 <ExternalLink className="size-2.5" />
               </a>
             ) : (
-              <span className="font-mono">{allocation.ticket_key}</span>
+              <span className="font-mono text-xs">{allocation.ticket_key}</span>
             )
           ) : null}
-          {allocation.notes ? <span className="truncate">{allocation.notes}</span> : null}
         </div>
-      ) : null}
-    </div>
+        <p className="text-sm font-medium leading-snug">{allocation.title}</p>
+        {allocation.notes ? (
+          <p className="text-xs text-muted-foreground">{allocation.notes}</p>
+        ) : null}
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
