@@ -219,7 +219,7 @@ export function BoardGrid({ email }: { email: string }) {
         ) : (
           <div className="h-full w-full overflow-x-hidden overflow-y-auto rounded-xl border border-grid-line bg-surface shadow-card board-scroll">
             <div
-              className="grid h-full w-full"
+              className="grid w-full"
               style={{
                 gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
                 gridTemplateRows: [
