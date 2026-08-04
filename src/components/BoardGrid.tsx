@@ -211,15 +211,15 @@ export function BoardGrid({ email }: { email: string }) {
             onAddDev={() => setDevDialog({ open: true, dev: null })}
           />
         ) : (
-          <div className="h-full w-full overflow-hidden rounded-xl border border-grid-line bg-surface shadow-card">
+          <div className="h-full w-full overflow-x-hidden overflow-y-auto rounded-xl border border-grid-line bg-surface shadow-card board-scroll">
             <div
               className="grid h-full w-full"
               style={{
                 gridTemplateColumns: `minmax(0, 1fr) repeat(${devs.length}, minmax(0, 1fr))`,
-                gridTemplateRows: `auto repeat(${sprints.length}, minmax(0, 1fr))`,
+                gridTemplateRows: `auto repeat(${sprints.length}, minmax(104px, 1fr))`,
               }}
             >
-              <div className="border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="sticky top-0 z-20 border-b border-r border-grid-line bg-surface-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Sprint
               </div>
               {devs.map((d) => {
@@ -229,7 +229,7 @@ export function BoardGrid({ email }: { email: string }) {
                     key={d.id}
                     onClick={() => setDevDialog({ open: true, dev: d })}
                     style={{ boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}` }}
-                    className="group flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
+                    className="group sticky top-0 z-10 flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
                   >
                     <span
                       className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
