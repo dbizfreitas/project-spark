@@ -200,24 +200,6 @@ export function BoardGrid({ email }: { email: string }) {
 
           <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
             <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
-              Status
-            </span>
-            <FilterChip active={statusFilter === "todos"} onClick={() => setStatusFilter("todos")}>
-              Todos
-            </FilterChip>
-            {STATUS_LIST.map((s) => (
-              <FilterChip
-                key={s.value}
-                active={statusFilter === s.value}
-                onClick={() => setStatusFilter(s.value)}
-              >
-                <span className={`size-2 rounded-full ${s.dot}`} />
-                {s.label}
-              </FilterChip>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
               Tipo
             </span>
             <FilterChip active={tipoFilter === "todos"} onClick={() => setTipoFilter("todos")}>
@@ -231,6 +213,25 @@ export function BoardGrid({ email }: { email: string }) {
               >
                 <span className={`size-2 rounded-full ${t.dot}`} />
                 {t.label}
+              </FilterChip>
+            ))}
+
+            <span className="mx-1 h-4 w-px bg-white/15" />
+
+            <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
+              Status
+            </span>
+            <FilterChip active={statusFilter === "todos"} onClick={() => setStatusFilter("todos")}>
+              Todos
+            </FilterChip>
+            {STATUS_LIST.map((s) => (
+              <FilterChip
+                key={s.value}
+                active={statusFilter === s.value}
+                onClick={() => setStatusFilter(s.value)}
+              >
+                <span className={`size-2 rounded-full ${s.dot}`} />
+                {s.label}
               </FilterChip>
             ))}
           </div>
