@@ -21,7 +21,13 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
-import { STATUS_LIST, type Allocation, type AllocationStatus } from "@/lib/board";
+import {
+  STATUS_LIST,
+  TIPO_LIST,
+  type Allocation,
+  type AllocationStatus,
+  type AllocationTipo,
+} from "@/lib/board";
 
 export type AllocationDraft = {
   id?: string;
@@ -31,6 +37,7 @@ export type AllocationDraft = {
   ticket_key?: string | null;
   ticket_url?: string | null;
   status?: AllocationStatus;
+  tipo?: AllocationTipo;
   notes?: string | null;
 };
 
@@ -45,7 +52,8 @@ export function AllocationDialog({
   const [title, setTitle] = useState("");
   const [ticketKey, setTicketKey] = useState("");
   const [ticketUrl, setTicketUrl] = useState("");
-  const [status, setStatus] = useState<AllocationStatus>("planejado");
+  const [status, setStatus] = useState<AllocationStatus>("nao_especificada");
+  const [tipo, setTipo] = useState<AllocationTipo>("planejado");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -53,7 +61,8 @@ export function AllocationDialog({
     setTitle(draft.title ?? "");
     setTicketKey(draft.ticket_key ?? "");
     setTicketUrl(draft.ticket_url ?? "");
-    setStatus(draft.status ?? "planejado");
+    setStatus(draft.status ?? "nao_especificada");
+    setTipo(draft.tipo ?? "planejado");
     setNotes(draft.notes ?? "");
   }, [draft]);
 
@@ -67,6 +76,7 @@ export function AllocationDialog({
         ticket_key: ticketKey.trim() || null,
         ticket_url: ticketUrl.trim() || null,
         status,
+        tipo,
         notes: notes.trim() || null,
       };
       const res = draft.id
@@ -113,23 +123,43 @@ export function AllocationDialog({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as AllocationStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_LIST.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    <span className="flex items-center gap-2">
-                      <span className={`size-2 rounded-full ${s.dot}`} />
-                      {s.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as AllocationStatus)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_LIST.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      <span className="flex items-center gap-2">
+                        <span className={`size-2 rounded-full ${s.dot}`} />
+                        {s.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo</Label>
+              <Select value={tipo} onValueChange={(v) => setTipo(v as AllocationTipo)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIPO_LIST.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      <span className="flex items-center gap-2">
+                        <span className={`size-2 rounded-full ${t.dot}`} />
+                        {t.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -200,6 +230,7 @@ export function toDraft(a: Allocation): AllocationDraft {
     ticket_key: a.ticket_key,
     ticket_url: a.ticket_url,
     status: a.status,
+    tipo: a.tipo,
     notes: a.notes,
   };
 }

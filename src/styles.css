@@ -160,18 +160,12 @@
   --color-header: var(--header);
   --color-header-foreground: var(--header-foreground);
 
-  --color-st-planejado: var(--st-planejado);
-  --color-st-planejado-fg: var(--st-planejado-fg);
-  --color-st-andamento: var(--st-andamento);
-  --color-st-andamento-fg: var(--st-andamento-fg);
+  --color-st-nao-especificada: var(--st-nao-especificada);
+  --color-st-nao-especificada-fg: var(--st-nao-especificada-fg);
+  --color-st-especificada: var(--st-especificada);
+  --color-st-especificada-fg: var(--st-especificada-fg);
   --color-st-bug: var(--st-bug);
   --color-st-bug-fg: var(--st-bug-fg);
-  --color-st-evolutiva: var(--st-evolutiva);
-  --color-st-evolutiva-fg: var(--st-evolutiva-fg);
-  --color-st-risco: var(--st-risco);
-  --color-st-risco-fg: var(--st-risco-fg);
-  --color-st-concluido: var(--st-concluido);
-  --color-st-concluido-fg: var(--st-concluido-fg);
   --color-st-ferias: var(--st-ferias);
   --color-st-ferias-fg: var(--st-ferias-fg);
 
@@ -209,20 +203,14 @@
   --input: oklch(0.9 0.01 250);
   --ring: oklch(0.52 0.1 195);
 
-  --st-planejado: oklch(0.94 0.012 250);
-  --st-planejado-fg: oklch(0.36 0.03 255);
-  --st-andamento: oklch(0.92 0.06 230);
-  --st-andamento-fg: oklch(0.36 0.09 245);
+  --st-nao-especificada: oklch(0.94 0.012 250);
+  --st-nao-especificada-fg: oklch(0.36 0.03 255);
+  --st-especificada: oklch(0.93 0.09 95);
+  --st-especificada-fg: oklch(0.38 0.09 75);
   --st-bug: oklch(0.9 0.07 35);
   --st-bug-fg: oklch(0.38 0.13 30);
-  --st-evolutiva: oklch(0.93 0.09 95);
-  --st-evolutiva-fg: oklch(0.38 0.09 75);
-  --st-risco: oklch(0.9 0.08 15);
-  --st-risco-fg: oklch(0.4 0.16 20);
-  --st-concluido: oklch(0.92 0.07 155);
-  --st-concluido-fg: oklch(0.36 0.09 155);
-  --st-ferias: oklch(0.93 0.05 175);
-  --st-ferias-fg: oklch(0.36 0.06 185);
+  --st-ferias: oklch(0.92 0.07 155);
+  --st-ferias-fg: oklch(0.36 0.09 155);
 }
 
 @layer base {

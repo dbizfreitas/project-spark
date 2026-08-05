@@ -1,11 +1,6 @@
-export type AllocationStatus =
-  | "planejado"
-  | "em_andamento"
-  | "bug"
-  | "evolutiva"
-  | "risco"
-  | "concluido"
-  | "ferias";
+export type AllocationStatus = "nao_especificada" | "especificada";
+
+export type AllocationTipo = "planejado" | "bug" | "evolutiva" | "ferias";
 
 export type Team = {
   id: string;
@@ -41,6 +36,7 @@ export type Allocation = {
   ticket_key: string | null;
   ticket_url: string | null;
   status: AllocationStatus;
+  tipo: AllocationTipo;
   notes: string | null;
   position: number;
 };
@@ -52,51 +48,42 @@ export const STATUS_LIST: {
   dot: string;
 }[] = [
   {
-    value: "planejado",
-    label: "Planejado",
-    chip: "bg-st-planejado text-st-planejado-fg",
-    dot: "bg-st-planejado-fg",
+    value: "nao_especificada",
+    label: "Não especificada",
+    chip: "bg-st-nao-especificada text-st-nao-especificada-fg",
+    dot: "bg-st-nao-especificada-fg",
   },
   {
-    value: "em_andamento",
-    label: "Em andamento",
-    chip: "bg-st-andamento text-st-andamento-fg",
-    dot: "bg-st-andamento-fg",
+    value: "especificada",
+    label: "Especificada",
+    chip: "bg-st-especificada text-st-especificada-fg",
+    dot: "bg-st-especificada-fg",
   },
-  {
-    value: "bug",
-    label: "Bug",
-    chip: "bg-st-bug text-st-bug-fg",
-    dot: "bg-st-bug-fg",
-  },
-  {
-    value: "evolutiva",
-    label: "Evolutiva",
-    chip: "bg-st-evolutiva text-st-evolutiva-fg",
-    dot: "bg-st-evolutiva-fg",
-  },
-  {
-    value: "risco",
-    label: "Em risco",
-    chip: "bg-st-risco text-st-risco-fg",
-    dot: "bg-st-risco-fg",
-  },
-  {
-    value: "concluido",
-    label: "Concluído",
-    chip: "bg-st-concluido text-st-concluido-fg",
-    dot: "bg-st-concluido-fg",
-  },
-  {
-    value: "ferias",
-    label: "Férias / ausência",
-    chip: "bg-st-ferias text-st-ferias-fg",
-    dot: "bg-st-ferias-fg",
-  },
+];
+
+export const TIPO_LIST: {
+  value: AllocationTipo;
+  label: string;
+  dot: string;
+}[] = [
+  { value: "planejado", label: "Planejado", dot: "bg-muted-foreground/50" },
+  { value: "bug", label: "Bug", dot: "bg-st-bug-fg" },
+  { value: "evolutiva", label: "Evolutiva", dot: "bg-muted-foreground/50" },
+  { value: "ferias", label: "Férias / ausência", dot: "bg-st-ferias-fg" },
 ];
 
 export const statusInfo = (s: AllocationStatus) =>
   STATUS_LIST.find((x) => x.value === s) ?? STATUS_LIST[0]!;
+
+export const tipoInfo = (t: AllocationTipo) =>
+  TIPO_LIST.find((x) => x.value === t) ?? TIPO_LIST[0]!;
+
+/** Bug/Férias carry their own fixed color; Planejado/Evolutiva follow the status instead. */
+export function chipClassFor(a: Pick<Allocation, "tipo" | "status">) {
+  if (a.tipo === "bug") return "bg-st-bug text-st-bug-fg";
+  if (a.tipo === "ferias") return "bg-st-ferias text-st-ferias-fg";
+  return statusInfo(a.status).chip;
+}
 
 export function formatRange(start: string, end: string) {
   const f = (iso: string) => {

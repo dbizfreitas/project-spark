@@ -23,6 +23,7 @@ export type Database = {
           position: number
           sprint_id: string
           status: Database["public"]["Enums"]["allocation_status"]
+          tipo: Database["public"]["Enums"]["allocation_tipo"]
           ticket_key: string | null
           ticket_url: string | null
           title: string
@@ -36,6 +37,7 @@ export type Database = {
           position?: number
           sprint_id: string
           status?: Database["public"]["Enums"]["allocation_status"]
+          tipo?: Database["public"]["Enums"]["allocation_tipo"]
           ticket_key?: string | null
           ticket_url?: string | null
           title: string
@@ -49,6 +51,7 @@ export type Database = {
           position?: number
           sprint_id?: string
           status?: Database["public"]["Enums"]["allocation_status"]
+          tipo?: Database["public"]["Enums"]["allocation_tipo"]
           ticket_key?: string | null
           ticket_url?: string | null
           title?: string
@@ -195,14 +198,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      allocation_status:
-        | "planejado"
-        | "em_andamento"
-        | "bug"
-        | "evolutiva"
-        | "risco"
-        | "concluido"
-        | "ferias"
+      allocation_status: "nao_especificada" | "especificada"
+      allocation_tipo: "planejado" | "bug" | "evolutiva" | "ferias"
       app_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -331,15 +328,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      allocation_status: [
-        "planejado",
-        "em_andamento",
-        "bug",
-        "evolutiva",
-        "risco",
-        "concluido",
-        "ferias",
-      ],
+      allocation_status: ["nao_especificada", "especificada"],
+      allocation_tipo: ["planejado", "bug", "evolutiva", "ferias"],
       app_role: ["admin", "editor", "viewer"],
     },
   },

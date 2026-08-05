@@ -15,11 +15,15 @@ import {
   UserPlus,
 } from "lucide-react";
 import {
+  chipClassFor,
   formatRange,
   statusInfo,
+  tipoInfo,
   STATUS_LIST,
+  TIPO_LIST,
   type Allocation,
   type AllocationStatus,
+  type AllocationTipo,
   type Dev,
   type Sprint,
   type Team,
@@ -42,7 +46,8 @@ export function BoardGrid({ email }: { email: string }) {
     sprint: null,
   });
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<AllocationStatus | "todos">("todos");
+  const [statusFilter, setStatusFilter] = useState<AllocationStatus | "todos">("todos");
+  const [tipoFilter, setTipoFilter] = useState<AllocationTipo | "todos">("todos");
   const [dragOver, setDragOver] = useState<string | null>(null);
 
   const devsQ = useQuery({
@@ -118,12 +123,13 @@ export function BoardGrid({ email }: { email: string }) {
 
   const term = search.trim().toLowerCase();
   const matches = (a: Allocation) => {
-    const okStatus = filter === "todos" || a.status === filter;
+    const okStatus = statusFilter === "todos" || a.status === statusFilter;
+    const okTipo = tipoFilter === "todos" || a.tipo === tipoFilter;
     const okTerm =
       !term ||
       a.title.toLowerCase().includes(term) ||
       (a.ticket_key ?? "").toLowerCase().includes(term);
-    return okStatus && okTerm;
+    return okStatus && okTipo && okTerm;
   };
 
   const byCell = useMemo(() => {
@@ -193,17 +199,38 @@ export function BoardGrid({ email }: { email: string }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
-            <FilterChip active={filter === "todos"} onClick={() => setFilter("todos")}>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
+              Status
+            </span>
+            <FilterChip active={statusFilter === "todos"} onClick={() => setStatusFilter("todos")}>
               Todos
             </FilterChip>
             {STATUS_LIST.map((s) => (
               <FilterChip
                 key={s.value}
-                active={filter === s.value}
-                onClick={() => setFilter(s.value)}
+                active={statusFilter === s.value}
+                onClick={() => setStatusFilter(s.value)}
               >
                 <span className={`size-2 rounded-full ${s.dot}`} />
                 {s.label}
+              </FilterChip>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
+              Tipo
+            </span>
+            <FilterChip active={tipoFilter === "todos"} onClick={() => setTipoFilter("todos")}>
+              Todos
+            </FilterChip>
+            {TIPO_LIST.map((t) => (
+              <FilterChip
+                key={t.value}
+                active={tipoFilter === t.value}
+                onClick={() => setTipoFilter(t.value)}
+              >
+                <span className={`size-2 rounded-full ${t.dot}`} />
+                {t.label}
               </FilterChip>
             ))}
           </div>
@@ -404,7 +431,7 @@ function AllocationChip({
   allowWrap: boolean;
   onEdit: () => void;
 }) {
-  const info = statusInfo(allocation.status);
+  const chipClass = chipClassFor(allocation);
   return (
     <HoverCard openDelay={300}>
       <HoverCardTrigger asChild>
@@ -412,7 +439,7 @@ function AllocationChip({
           draggable
           onDragStart={(e) => e.dataTransfer.setData("text/allocation", allocation.id)}
           onClick={onEdit}
-          className={`shrink-0 cursor-grab overflow-hidden rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${info.chip} ${
+          className={`shrink-0 cursor-grab overflow-hidden rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${chipClass} ${
             dimmed ? "opacity-25" : ""
           }`}
         >
@@ -445,9 +472,14 @@ function AllocationChip({
         </div>
       </HoverCardTrigger>
       <HoverCardContent side="right" className="w-72 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${info.chip}`}>
-            {info.label}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusInfo(allocation.status).chip}`}
+          >
+            {statusInfo(allocation.status).label}
+          </span>
+          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${chipClass}`}>
+            {tipoInfo(allocation.tipo).label}
           </span>
           {allocation.ticket_key ? (
             allocation.ticket_url ? (
