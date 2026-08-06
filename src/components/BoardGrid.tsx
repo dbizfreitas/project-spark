@@ -162,7 +162,7 @@ export function BoardGrid({ email }: { email: string }) {
             </span>
             <div className="mr-auto">
               <h1 className="text-base font-semibold leading-tight">Sprint Board</h1>
-              <p className="text-[11px] text-header-foreground/60">Alocação de demandas do time</p>
+              <p className="text-[11px] text-muted-foreground">Alocação de demandas do time</p>
             </div>
 
             <div className="relative">
@@ -524,7 +524,7 @@ function FilterChip({
       onClick={onClick}
       className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
         active
-          ? "bg-primary/15 text-primary"
+          ? "bg-primary/15 text-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-foreground"
       }`}
     >

@@ -2,6 +2,8 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Kept so unused dark: utilities in ui/chart.tsx and ui/alert.tsx stay inert instead of
+   silently activating on prefers-color-scheme: dark (no .dark class is ever set). */
 @custom-variant dark (&:is(.dark *));
 
 
@@ -67,6 +69,7 @@
 
 :root {
   --radius: 0.5rem;
+  color-scheme: dark;
 
   --background: hsl(217 33% 10%);
   --foreground: hsl(210 40% 98%);
@@ -145,8 +148,8 @@
 
 :root {
   --surface: var(--card);
-  --surface-2: hsl(217 33% 17%);
-  --grid-line: var(--border);
+  --surface-2: hsl(217 33% 15%);
+  --grid-line: hsl(217 33% 22%);
   --header: var(--card);
   --header-foreground: var(--foreground);
 
