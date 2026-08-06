@@ -85,6 +85,22 @@ export function chipClassFor(a: Pick<Allocation, "tipo" | "status">) {
   return statusInfo(a.status).chip;
 }
 
+/** Background-only wash for the allocation card body (translucent tint over the dark surface behind it). */
+export function washClassFor(a: Pick<Allocation, "tipo" | "status">) {
+  if (a.tipo === "bug") return "bg-st-bug";
+  if (a.tipo === "ferias") return "bg-st-ferias";
+  return a.status === "especificada" ? "bg-st-especificada" : "bg-st-nao-especificada";
+}
+
+/** Solid left-border accent using the same semantic color as washClassFor. */
+export function accentClassFor(a: Pick<Allocation, "tipo" | "status">) {
+  if (a.tipo === "bug") return "border-st-bug-fg";
+  if (a.tipo === "ferias") return "border-st-ferias-fg";
+  return a.status === "especificada"
+    ? "border-st-especificada-fg"
+    : "border-st-nao-especificada-fg";
+}
+
 export function formatRange(start: string, end: string) {
   const f = (iso: string) => {
     const [y, m, d] = iso.split("-");
