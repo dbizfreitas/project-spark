@@ -157,7 +157,7 @@ export function BoardGrid({ email }: { email: string }) {
       <div className="flex h-screen flex-col overflow-hidden bg-background">
         <header className="border-b border-border bg-header text-header-foreground">
           <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-white/10">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <LayoutGrid className="size-4" />
             </span>
             <div className="mr-auto">
@@ -166,12 +166,12 @@ export function BoardGrid({ email }: { email: string }) {
             </div>
 
             <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-header-foreground/50" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar demanda ou ticket"
-                className="h-9 w-56 border-white/15 bg-white/10 pl-8 text-header-foreground placeholder:text-header-foreground/50"
+                className="h-9 w-56 pl-8"
               />
             </div>
 
@@ -192,7 +192,6 @@ export function BoardGrid({ email }: { email: string }) {
             <Button
               size="sm"
               variant="ghost"
-              className="text-header-foreground hover:bg-white/10 hover:text-header-foreground"
               onClick={() => supabase.auth.signOut()}
               title={email}
             >
@@ -200,8 +199,8 @@ export function BoardGrid({ email }: { email: string }) {
             </Button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 border-t border-white/10 px-4 py-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-4 py-2">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Tipo
             </span>
             <FilterChip active={tipoFilter === "todos"} onClick={() => setTipoFilter("todos")}>
@@ -218,9 +217,9 @@ export function BoardGrid({ email }: { email: string }) {
               </FilterChip>
             ))}
 
-            <span className="mx-1 h-4 w-px bg-white/15" />
+            <span className="mx-1 h-4 w-px bg-border" />
 
-            <span className="text-[11px] font-medium uppercase tracking-wider text-header-foreground/40">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Status
             </span>
             <FilterChip active={statusFilter === "todos"} onClick={() => setStatusFilter("todos")}>
@@ -366,7 +365,7 @@ function SprintRow({
       >
         <div className="flex items-center gap-2">
           {sprint.quarter ? (
-            <span className="rounded bg-header px-1.5 py-0.5 text-[10px] font-semibold text-header-foreground">
+            <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
               {sprint.quarter}
             </span>
           ) : null}
@@ -525,8 +524,8 @@ function FilterChip({
       onClick={onClick}
       className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
         active
-          ? "bg-white/20 text-header-foreground"
-          : "text-header-foreground/60 hover:bg-white/10"
+          ? "bg-primary/15 text-primary"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
       }`}
     >
       {children}

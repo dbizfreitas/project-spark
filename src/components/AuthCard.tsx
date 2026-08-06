@@ -41,7 +41,7 @@ export function AuthCard() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-pop">
         <div className="mb-6 flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-lg bg-header text-header-foreground">
+          <span className="flex size-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
             <LayoutGrid className="size-5" />
           </span>
           <div>
