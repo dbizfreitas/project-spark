@@ -15,10 +15,12 @@ import {
   UserPlus,
 } from "lucide-react";
 import {
+  accentClassFor,
   chipClassFor,
   formatRange,
   statusInfo,
   tipoInfo,
+  washClassFor,
   STATUS_LIST,
   TIPO_LIST,
   type Allocation,
@@ -433,6 +435,8 @@ function AllocationChip({
   onEdit: () => void;
 }) {
   const chipClass = chipClassFor(allocation);
+  const washClass = washClassFor(allocation);
+  const accentClass = accentClassFor(allocation);
   return (
     <HoverCard openDelay={300}>
       <HoverCardTrigger asChild>
@@ -440,7 +444,7 @@ function AllocationChip({
           draggable
           onDragStart={(e) => e.dataTransfer.setData("text/allocation", allocation.id)}
           onClick={onEdit}
-          className={`shrink-0 cursor-grab overflow-hidden rounded-md px-2 py-1.5 text-left shadow-card transition-opacity active:cursor-grabbing ${chipClass} ${
+          className={`shrink-0 cursor-grab overflow-hidden rounded-md border-l-[3px] px-2 py-1.5 text-left text-foreground shadow-card transition-opacity active:cursor-grabbing ${washClass} ${accentClass} ${
             dimmed ? "opacity-25" : ""
           }`}
         >
@@ -475,11 +479,11 @@ function AllocationChip({
       <HoverCardContent side="right" className="w-72 space-y-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span
-            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusInfo(allocation.status).chip}`}
+            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusInfo(allocation.status).chip}`}
           >
             {statusInfo(allocation.status).label}
           </span>
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${chipClass}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${chipClass}`}>
             {tipoInfo(allocation.tipo).label}
           </span>
           {allocation.ticket_key ? (
