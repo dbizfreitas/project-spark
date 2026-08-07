@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "../components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { useTheme } from "@/hooks/use-theme";
 
 
 function NotFoundComponent() {
@@ -111,9 +112,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          // Applies a previously saved dark-mode choice before hydration, so
+          // returning dark-mode users don't see a flash of the light theme
+          // (which is the default with no script needed). suppressHydrationWarning
+          // on <html> is required alongside this script: the class it sets can
+          // legitimately differ from the server-rendered markup, and without
+          // this prop React logs a hydration-mismatch error on every dark-mode
+          // load even though nothing is actually broken.
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage.getItem("theme")==="dark"){document.documentElement.classList.add("dark")}}catch(e){}',
+          }}
+        />
       </head>
       <body>
         {children}
@@ -125,12 +139,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { theme } = useTheme();
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <Toaster position="top-center" richColors theme="dark" />
+      <Toaster position="top-center" richColors theme={theme} />
     </QueryClientProvider>
   );
 }

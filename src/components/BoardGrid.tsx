@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDialog";
 import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function BoardGrid({ email }: { email: string }) {
   const qc = useQueryClient();
@@ -189,6 +190,7 @@ export function BoardGrid({ email }: { email: string }) {
             >
               <UserPlus className="size-4" /> Pessoa
             </Button>
+            <ThemeToggle />
             <Button
               size="sm"
               variant="ghost"

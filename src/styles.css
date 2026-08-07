@@ -2,8 +2,8 @@
 @source "../src";
 @import "tw-animate-css";
 
-/* Kept so unused dark: utilities in ui/chart.tsx and ui/alert.tsx stay inert instead of
-   silently activating on prefers-color-scheme: dark (no .dark class is ever set). */
+/* Drives the `dark:` variant and the .dark token overrides below — toggled
+   by src/hooks/use-theme.ts. */
 @custom-variant dark (&:is(.dark *));
 
 
@@ -13,14 +13,23 @@
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root block below defines the actual color values, matched 1:1 to
- * the Way2 "Visão Agile" dashboard (apontamentos.way2.com.br) so both
- * internal tools share one dark design system. There is no light theme —
- * every color lives only in :root, written as hsl()/rgba() to stay
- * traceable to the values measured on that reference dashboard.
+ * There are TWO :root/.dark pairs in this file — one for the shadcn base
+ * tokens right below this comment, and a second one further down (labeled
+ * "Sprint Board — design system") for this app's own tokens (surface,
+ * grid-line, header, st-*). Each :root holds LIGHT values; the .dark block
+ * immediately below it holds DARK values for that same set of variables
+ * (applied by toggling the `dark` class on <html>, see
+ * src/hooks/use-theme.ts). Both pairs are matched 1:1 to the Way2 "Visão
+ * Agile" dashboard (apontamentos.way2.com.br) so both internal tools share
+ * one design system in either mode. Values are written as hsl()/rgba() to
+ * stay traceable to the values measured on that reference dashboard.
  *
  * To add a new semantic color:
- * 1. Add the variable to :root
+ * 1. Add the variable to the RIGHT :root/.dark pair for what it belongs to
+ *    (shadcn base token vs. board-specific token) — light value in :root,
+ *    dark value in .dark. A variable added to the wrong pair's :root is a
+ *    silent bug: :root and .dark share specificity, so whichever comes
+ *    later in the file wins the cascade, with no build error to catch it.
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
@@ -67,8 +76,49 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* shadcn base tokens — light */
 :root {
   --radius: 0.5rem;
+  color-scheme: light;
+
+  --background: hsl(0 0% 98%);
+  --foreground: hsl(217 33% 17%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(217 33% 17%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(217 33% 17%);
+
+  --primary: hsl(212 100% 40%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(210 40% 96%);
+  --secondary-foreground: hsl(217 33% 17%);
+  --muted: hsl(210 40% 96%);
+  --muted-foreground: hsl(215 16% 47%);
+  --accent: hsl(212 100% 95%);
+  --accent-foreground: hsl(212 100% 40%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(212 100% 40%);
+
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(217 33% 17%);
+  --sidebar-primary: hsl(212 100% 40%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(210 40% 96%);
+  --sidebar-accent-foreground: hsl(217 33% 17%);
+  --sidebar-border: hsl(214 32% 91%);
+  --sidebar-ring: hsl(212 100% 40%);
+}
+
+/* shadcn base tokens — dark */
+.dark {
   color-scheme: dark;
 
   --background: hsl(217 33% 10%);
@@ -120,8 +170,8 @@
 
 /* ---------------------------------------------------------------
  * Sprint Board — design system
- * Matches the Way2 "Visão Agile" dashboard: dark navy chrome, vivid
- * blue primary, semantic status colours (blue/amber/red/green).
+ * Matches the Way2 "Visão Agile" dashboard in both light and dark:
+ * vivid blue primary, semantic status colours (blue/amber/red/green).
  * ------------------------------------------------------------- */
 
 @theme inline {
@@ -146,12 +196,28 @@
   --shadow-pop: 0 10px 30px -10px rgb(0 0 0 / 0.45);
 }
 
+/* board tokens — light */
 :root {
   --surface: var(--card);
-  --surface-2: hsl(217 33% 15%);
-  --grid-line: hsl(217 33% 22%);
+  --surface-2: hsl(210 40% 98%);
+  --grid-line: hsl(214 32% 85%);
   --header: var(--card);
   --header-foreground: var(--foreground);
+
+  --st-nao-especificada: rgba(234, 179, 8, 0.1);
+  --st-nao-especificada-fg: #a16207;
+  --st-especificada: rgba(59, 130, 246, 0.1);
+  --st-especificada-fg: #2563eb;
+  --st-bug: rgba(239, 68, 68, 0.1);
+  --st-bug-fg: #b91c1c;
+  --st-ferias: rgba(34, 197, 94, 0.1);
+  --st-ferias-fg: #15803d;
+}
+
+/* board tokens — dark */
+.dark {
+  --surface-2: hsl(217 33% 15%);
+  --grid-line: hsl(217 33% 22%);
 
   --st-nao-especificada: rgba(234, 179, 8, 0.12);
   --st-nao-especificada-fg: #facc15;

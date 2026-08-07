@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LayoutGrid } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function AuthCard() {
   const [mode, setMode] = useState<"in" | "up">("in");
@@ -47,6 +48,9 @@ export function AuthCard() {
           <div>
             <h1 className="text-lg font-semibold">Sprint Board</h1>
             <p className="text-xs text-muted-foreground">Alocação de demandas do time</p>
+          </div>
+          <div className="ml-auto">
+            <ThemeToggle />
           </div>
         </div>
 
