@@ -111,13 +111,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script
           // Applies a previously saved dark-mode choice before hydration, so
           // returning dark-mode users don't see a flash of the light theme
-          // (which is the default with no script needed).
+          // (which is the default with no script needed). suppressHydrationWarning
+          // on <html> is required alongside this script: the class it sets can
+          // legitimately differ from the server-rendered markup, and without
+          // this prop React logs a hydration-mismatch error on every dark-mode
+          // load even though nothing is actually broken.
           dangerouslySetInnerHTML={{
             __html:
               'try{if(localStorage.getItem("theme")==="dark"){document.documentElement.classList.add("dark")}}catch(e){}',
