@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   CalendarPlus,
+  ClipboardList,
   ExternalLink,
   LayoutGrid,
   LogOut,
@@ -189,6 +191,11 @@ export function BoardGrid({ email }: { email: string }) {
               onClick={() => setDevDialog({ open: true, dev: null })}
             >
               <UserPlus className="size-4" /> Pessoa
+            </Button>
+            <Button size="sm" variant="ghost" asChild>
+              <Link to="/compromisso">
+                <ClipboardList className="size-4" /> Compromisso
+              </Link>
             </Button>
             <ThemeToggle />
             <Button
