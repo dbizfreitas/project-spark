@@ -114,6 +114,15 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          // Applies a previously saved dark-mode choice before hydration, so
+          // returning dark-mode users don't see a flash of the light theme
+          // (which is the default with no script needed).
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage.getItem("theme")==="dark"){document.documentElement.classList.add("dark")}}catch(e){}',
+          }}
+        />
       </head>
       <body>
         {children}
