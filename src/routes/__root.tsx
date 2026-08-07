@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "../components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { useTheme } from "@/hooks/use-theme";
 
 
 function NotFoundComponent() {
@@ -138,12 +139,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { theme } = useTheme();
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <Toaster position="top-center" richColors theme="dark" />
+      <Toaster position="top-center" richColors theme={theme} />
     </QueryClientProvider>
   );
 }
