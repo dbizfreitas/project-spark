@@ -271,7 +271,7 @@ export type Database = {
       set_user_role: {
         Args: {
           _target: string
-          _role: Database["public"]["Enums"]["app_role"]
+          _role: Database["public"]["Enums"]["app_role"] | null
         }
         Returns: undefined
       }
