@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CompromissoRouteImport } from './routes/compromisso'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AceitarConviteRoute = AceitarConviteRouteImport.update({
+  id: '/aceitar-convite',
+  path: '/aceitar-convite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -31,30 +37,34 @@ const CompromissoRoute = CompromissoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aceitar-convite': typeof AceitarConviteRoute
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aceitar-convite': typeof AceitarConviteRoute
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aceitar-convite': typeof AceitarConviteRoute
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/compromisso'
+  fullPaths: '/' | '/aceitar-convite' | '/admin' | '/compromisso'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/compromisso'
-  id: '__root__' | '/' | '/admin' | '/compromisso'
+  to: '/' | '/aceitar-convite' | '/admin' | '/compromisso'
+  id: '__root__' | '/' | '/aceitar-convite' | '/admin' | '/compromisso'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AceitarConviteRoute: typeof AceitarConviteRoute
   AdminRoute: typeof AdminRoute
   CompromissoRoute: typeof CompromissoRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aceitar-convite': {
+      id: '/aceitar-convite'
+      path: '/aceitar-convite'
+      fullPath: '/aceitar-convite'
+      preLoaderRoute: typeof AceitarConviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AceitarConviteRoute: AceitarConviteRoute,
   AdminRoute: AdminRoute,
   CompromissoRoute: CompromissoRoute,
 }

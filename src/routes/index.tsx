@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ShieldAlert } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
+import { useRole } from "@/hooks/use-role";
 import { AuthCard } from "@/components/AuthCard";
 import { BoardGrid } from "@/components/BoardGrid";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -28,8 +32,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { session, loading } = useSession();
+  const { canEdit, isAdmin, canView, loading: roleLoading } = useRole(session?.user.id);
 
-  if (loading) {
+  if (loading || (session && roleLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -39,5 +44,23 @@ function Index() {
 
   if (!session) return <AuthCard />;
 
-  return <BoardGrid email={session.user.email ?? ""} />;
+  if (!canView) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-8 text-center shadow-pop">
+          <ShieldAlert className="mx-auto size-8 text-muted-foreground" />
+          <h1 className="mt-4 text-lg font-semibold">Acesso ainda não liberado</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sua conta existe, mas nenhum papel foi atribuído. Peça acesso a um administrador da
+            plataforma.
+          </p>
+          <Button variant="outline" className="mt-6 w-full" onClick={() => supabase.auth.signOut()}>
+            Sair
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <BoardGrid email={session.user.email ?? ""} canEdit={canEdit} isAdmin={isAdmin} />;
 }

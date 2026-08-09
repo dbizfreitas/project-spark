@@ -15,6 +15,7 @@ import {
   Plus,
   Search,
   UserPlus,
+  Users,
 } from "lucide-react";
 import {
   accentClassFor,
@@ -39,7 +40,15 @@ import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function BoardGrid({ email }: { email: string }) {
+export function BoardGrid({
+  email,
+  canEdit,
+  isAdmin,
+}: {
+  email: string;
+  canEdit: boolean;
+  isAdmin: boolean;
+}) {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<AllocationDraft | null>(null);
   const [devDialog, setDevDialog] = useState<{ open: boolean; dev: Dev | null }>({
@@ -178,32 +187,38 @@ export function BoardGrid({ email }: { email: string }) {
               />
             </div>
 
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setSprintDialog({ open: true, sprint: null })}
-            >
-              <CalendarPlus className="size-4" /> Sprint
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setDevDialog({ open: true, dev: null })}
-            >
-              <UserPlus className="size-4" /> Pessoa
-            </Button>
+            {canEdit ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setSprintDialog({ open: true, sprint: null })}
+                >
+                  <CalendarPlus className="size-4" /> Sprint
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setDevDialog({ open: true, dev: null })}
+                >
+                  <UserPlus className="size-4" /> Pessoa
+                </Button>
+              </>
+            ) : null}
+            {isAdmin ? (
+              <Button size="sm" variant="ghost" asChild>
+                <Link to="/admin">
+                  <Users className="size-4" /> Usuários
+                </Link>
+              </Button>
+            ) : null}
             <Button size="sm" variant="ghost" asChild>
               <Link to="/compromisso">
                 <ClipboardList className="size-4" /> Compromisso
               </Link>
             </Button>
             <ThemeToggle />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => supabase.auth.signOut()}
-              title={email}
-            >
+            <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
               <LogOut className="size-4" />
             </Button>
           </div>
@@ -251,11 +266,17 @@ export function BoardGrid({ email }: { email: string }) {
           {loading ? (
             <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
           ) : sprints.length === 0 || devs.length === 0 ? (
-            <EmptyState
-              hasDevs={devs.length > 0}
-              onAddSprint={() => setSprintDialog({ open: true, sprint: null })}
-              onAddDev={() => setDevDialog({ open: true, dev: null })}
-            />
+            canEdit ? (
+              <EmptyState
+                hasDevs={devs.length > 0}
+                onAddSprint={() => setSprintDialog({ open: true, sprint: null })}
+                onAddDev={() => setDevDialog({ open: true, dev: null })}
+              />
+            ) : (
+              <p className="py-20 text-center text-sm text-muted-foreground">
+                O quadro ainda não foi montado.
+              </p>
+            )
           ) : (
             <div className="h-full w-full overflow-x-hidden overflow-y-auto rounded-xl border border-grid-line bg-surface shadow-card board-scroll">
               <div
@@ -279,7 +300,10 @@ export function BoardGrid({ email }: { email: string }) {
                     <Tooltip key={d.id}>
                       <TooltipTrigger asChild>
                         <button
-                          onClick={() => setDevDialog({ open: true, dev: d })}
+                          onClick={() => {
+                            if (!canEdit) return;
+                            setDevDialog({ open: true, dev: d });
+                          }}
                           style={{ boxShadow: `inset 0 -3px 0 0 ${team?.color ?? "transparent"}` }}
                           className="group sticky top-0 z-10 flex items-center gap-2 overflow-hidden border-b border-r border-grid-line bg-surface-2 px-3 py-2 text-left last:border-r-0 hover:bg-secondary"
                         >
@@ -314,10 +338,23 @@ export function BoardGrid({ email }: { email: string }) {
                     matches={matches}
                     dragOver={dragOver}
                     setDragOver={setDragOver}
-                    onEditSprint={() => setSprintDialog({ open: true, sprint: s })}
-                    onAdd={(devId) => setDraft({ sprint_id: s.id, dev_id: devId })}
-                    onEdit={(a) => setDraft(toDraft(a))}
-                    onDrop={(id, devId) => move.mutate({ id, sprint_id: s.id, dev_id: devId })}
+                    canEdit={canEdit}
+                    onEditSprint={() => {
+                      if (!canEdit) return;
+                      setSprintDialog({ open: true, sprint: s });
+                    }}
+                    onAdd={(devId) => {
+                      if (!canEdit) return;
+                      setDraft({ sprint_id: s.id, dev_id: devId });
+                    }}
+                    onEdit={(a) => {
+                      if (!canEdit) return;
+                      setDraft(toDraft(a));
+                    }}
+                    onDrop={(id, devId) => {
+                      if (!canEdit) return;
+                      move.mutate({ id, sprint_id: s.id, dev_id: devId });
+                    }}
                   />
                 ))}
               </div>
@@ -350,6 +387,7 @@ function SprintRow({
   matches,
   dragOver,
   setDragOver,
+  canEdit,
   onEditSprint,
   onAdd,
   onEdit,
@@ -361,6 +399,7 @@ function SprintRow({
   matches: (a: Allocation) => boolean;
   dragOver: string | null;
   setDragOver: (v: string | null) => void;
+  canEdit: boolean;
   onEditSprint: () => void;
   onAdd: (devId: string) => void;
   onEdit: (a: Allocation) => void;
@@ -414,16 +453,19 @@ function SprintRow({
                   allocation={a}
                   dimmed={!matches(a)}
                   allowWrap={items.length === 1}
+                  canEdit={canEdit}
                   onEdit={() => onEdit(a)}
                 />
               ))}
             </div>
-            <button
-              onClick={() => onAdd(d.id)}
-              className="pointer-events-none absolute inset-x-1.5 top-full z-10 mt-0 flex items-center justify-center gap-1 rounded-md border border-dashed border-grid-line bg-surface/90 py-1 text-[11px] text-muted-foreground opacity-0 shadow-card backdrop-blur-sm transition-opacity hover:border-primary hover:text-primary group-hover/cell:pointer-events-auto group-hover/cell:opacity-100"
-            >
-              <Plus className="size-3" /> demanda
-            </button>
+            {canEdit ? (
+              <button
+                onClick={() => onAdd(d.id)}
+                className="pointer-events-none absolute inset-x-1.5 top-full z-10 mt-0 flex items-center justify-center gap-1 rounded-md border border-dashed border-grid-line bg-surface/90 py-1 text-[11px] text-muted-foreground opacity-0 shadow-card backdrop-blur-sm transition-opacity hover:border-primary hover:text-primary group-hover/cell:pointer-events-auto group-hover/cell:opacity-100"
+              >
+                <Plus className="size-3" /> demanda
+              </button>
+            ) : null}
           </div>
         );
       })}
@@ -435,11 +477,13 @@ function AllocationChip({
   allocation,
   dimmed,
   allowWrap,
+  canEdit,
   onEdit,
 }: {
   allocation: Allocation;
   dimmed: boolean;
   allowWrap: boolean;
+  canEdit: boolean;
   onEdit: () => void;
 }) {
   const chipClass = chipClassFor(allocation);
@@ -449,12 +493,12 @@ function AllocationChip({
     <HoverCard openDelay={300}>
       <HoverCardTrigger asChild>
         <div
-          draggable
+          draggable={canEdit}
           onDragStart={(e) => e.dataTransfer.setData("text/allocation", allocation.id)}
           onClick={onEdit}
-          className={`shrink-0 cursor-grab overflow-hidden rounded-md border-l-[3px] px-2 py-1.5 text-left text-foreground shadow-card transition-opacity active:cursor-grabbing ${washClass} ${accentClass} ${
-            dimmed ? "opacity-25" : ""
-          }`}
+          className={`shrink-0 overflow-hidden rounded-md border-l-[3px] px-2 py-1.5 text-left text-foreground shadow-card transition-opacity ${
+            canEdit ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+          } ${washClass} ${accentClass} ${dimmed ? "opacity-25" : ""}`}
         >
           <p
             className={`text-xs font-medium leading-snug ${allowWrap ? "line-clamp-4" : "truncate"}`}
