@@ -204,17 +204,19 @@ BEGIN
     RESET ROLE;
   END;
 
-  -- 3.2 — editor não escreve em user_roles direto na tabela (sem GRANT de escrita)
+  -- 3.2 — editor não escreve em user_roles direto na tabela. Um UPDATE sob
+  -- RLS cuja USING clause não deixa nenhuma linha visível não lança
+  -- exceção — apenas afeta zero linhas. Por isso a asserção é sobre
+  -- ROW_COUNT, não sobre uma exceção capturada.
   SET LOCAL ROLE authenticated;
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub', v_editor, 'role', 'authenticated')::text, true);
-  BEGIN
-    UPDATE public.user_roles SET role = 'admin' WHERE user_id = v_editor;
-    RESET ROLE;
-    RAISE EXCEPTION 'FALHA 3.2: editor conseguiu escrever em user_roles direto na tabela';
-  EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-  END;
+  UPDATE public.user_roles SET role = 'admin' WHERE user_id = v_editor;
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RESET ROLE;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'FALHA 3.2: editor conseguiu escrever em user_roles direto na tabela (% linha(s) afetada(s))', v_count;
+  END IF;
 
   -- 3.3 a 3.6 — sem papel: SELECT real (não via helper) retorna zero linhas
   SET LOCAL ROLE authenticated;
