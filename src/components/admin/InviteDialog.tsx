@@ -42,10 +42,17 @@ export function InviteDialog() {
       if (error) throw error;
 
       // 2. Cria o usuário e devolve o link. Não depende de SMTP.
-      const result = await generateInviteLink({
-        data: { email, kind: "invite" },
-      });
-      return result.link;
+      try {
+        const result = await generateInviteLink({
+          data: { email, kind: "invite" },
+        });
+        return result.link;
+      } catch (linkError) {
+        // Sem o link, o convite ficaria pendente e bloquearia este e-mail
+        // por até 7 dias sem retry — desfaz para permitir tentar de novo.
+        await supabase.rpc("cancel_invitation", { _email: email });
+        throw linkError;
+      }
     },
     onSuccess: (value) => {
       setLink(value);
