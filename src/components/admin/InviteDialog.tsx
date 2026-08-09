@@ -50,7 +50,17 @@ export function InviteDialog() {
       } catch (linkError) {
         // Sem o link, o convite ficaria pendente e bloquearia este e-mail
         // por até 7 dias sem retry — desfaz para permitir tentar de novo.
-        await supabase.rpc("cancel_invitation", { _email: email });
+        // Uma falha no rollback não pode mascarar o erro original.
+        try {
+          const { error: cancelError } = await supabase.rpc("cancel_invitation", {
+            _email: email,
+          });
+          if (cancelError) {
+            console.error("[admin] rollback do convite falhou:", cancelError);
+          }
+        } catch (cancelException) {
+          console.error("[admin] rollback do convite falhou:", cancelException);
+        }
         throw linkError;
       }
     },
