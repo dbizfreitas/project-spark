@@ -166,4 +166,149 @@ BEGIN
   RAISE NOTICE 'Seção 2 OK';
 END $$;
 
+-- ============================================================
+-- Seção 3 — RLS sob papéis reais, não apenas os helpers (revisão final)
+-- ============================================================
+DO $$
+DECLARE
+  v_viewer uuid := '66666666-6666-6666-6666-666666666666';
+  v_nobody2 uuid := '77777777-7777-7777-7777-777777777777';
+  v_editor uuid := '22222222-2222-2222-2222-222222222222';
+  v_team_id uuid;
+  v_count int;
+  v_total_devs int;
+BEGIN
+  SELECT count(*) INTO v_total_devs FROM public.devs;
+  SELECT id INTO v_team_id FROM public.teams LIMIT 1;
+
+  INSERT INTO auth.users
+    (instance_id, id, aud, role, email, encrypted_password,
+     created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin)
+  VALUES
+    ('00000000-0000-0000-0000-000000000000', v_viewer, 'authenticated', 'authenticated',
+     'smoke-viewer@test.local', '', now(), now(), '{}'::jsonb, '{}'::jsonb, false),
+    ('00000000-0000-0000-0000-000000000000', v_nobody2, 'authenticated', 'authenticated',
+     'smoke-nobody2@test.local', '', now(), now(), '{}'::jsonb, '{}'::jsonb, false);
+
+  INSERT INTO public.user_roles (user_id, role) VALUES (v_viewer, 'viewer');
+
+  -- 3.1 — viewer não escreve em devs sob RLS real (não via RPC)
+  SET LOCAL ROLE authenticated;
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', v_viewer, 'role', 'authenticated')::text, true);
+  BEGIN
+    INSERT INTO public.devs (name, team_id) VALUES ('Smoke Test', v_team_id);
+    RESET ROLE;
+    RAISE EXCEPTION 'FALHA 3.1: viewer conseguiu inserir em devs sob RLS real';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RESET ROLE;
+  END;
+
+  -- 3.2 — editor não escreve em user_roles direto na tabela (sem GRANT de escrita)
+  SET LOCAL ROLE authenticated;
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', v_editor, 'role', 'authenticated')::text, true);
+  BEGIN
+    UPDATE public.user_roles SET role = 'admin' WHERE user_id = v_editor;
+    RESET ROLE;
+    RAISE EXCEPTION 'FALHA 3.2: editor conseguiu escrever em user_roles direto na tabela';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RESET ROLE;
+  END;
+
+  -- 3.3 a 3.6 — sem papel: SELECT real (não via helper) retorna zero linhas
+  SET LOCAL ROLE authenticated;
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', v_nobody2, 'role', 'authenticated')::text, true);
+
+  SELECT count(*) INTO v_count FROM public.devs;
+  IF v_count <> 0 THEN RESET ROLE; RAISE EXCEPTION 'FALHA 3.3: usuário sem papel leu % linha(s) de devs', v_count; END IF;
+
+  SELECT count(*) INTO v_count FROM public.teams;
+  IF v_count <> 0 THEN RESET ROLE; RAISE EXCEPTION 'FALHA 3.4: usuário sem papel leu % linha(s) de teams', v_count; END IF;
+
+  SELECT count(*) INTO v_count FROM public.sprints;
+  IF v_count <> 0 THEN RESET ROLE; RAISE EXCEPTION 'FALHA 3.5: usuário sem papel leu % linha(s) de sprints', v_count; END IF;
+
+  SELECT count(*) INTO v_count FROM public.allocations;
+  IF v_count <> 0 THEN RESET ROLE; RAISE EXCEPTION 'FALHA 3.6: usuário sem papel leu % linha(s) de allocations', v_count; END IF;
+
+  RESET ROLE;
+
+  -- 3.7 — viewer lê o mesmo total de devs que existe (RLS libera leitura, não filtra linha a linha)
+  SET LOCAL ROLE authenticated;
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', v_viewer, 'role', 'authenticated')::text, true);
+  SELECT count(*) INTO v_count FROM public.devs;
+  RESET ROLE;
+  IF v_count <> v_total_devs THEN
+    RAISE EXCEPTION 'FALHA 3.7: viewer viu % devs, esperado % (RLS filtrando indevidamente)', v_count, v_total_devs;
+  END IF;
+
+  -- 3.8 — as 4 policies novas existem de fato (não só a ausência das antigas)
+  IF (SELECT count(*) FROM pg_policies
+      WHERE schemaname = 'public'
+        AND policyname IN ('devs_select_viewers', 'teams_select_viewers',
+                            'sprints_select_viewers', 'allocations_select_viewers')) <> 4 THEN
+    RAISE EXCEPTION 'FALHA 3.8: nem todas as 4 policies *_select_viewers existem';
+  END IF;
+
+  RAISE NOTICE 'Seção 3 OK';
+END $$;
+
+-- ============================================================
+-- Seção 4 — cancel_invitation (Task 7b)
+-- ============================================================
+DO $$
+DECLARE
+  v_admin uuid := '11111111-1111-1111-1111-111111111111';
+  v_editor uuid := '22222222-2222-2222-2222-222222222222';
+  v_count int;
+BEGIN
+  -- 4.1 — não-admin não cancela convite
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', v_editor, 'role', 'authenticated')::text, true);
+  BEGIN
+    PERFORM public.cancel_invitation('smoke-cancel@test.local');
+    RAISE EXCEPTION 'FALHA 4.1: editor conseguiu cancelar convite';
+  EXCEPTION WHEN sqlstate 'W2001' THEN NULL;
+  END;
+
+  -- 4.2 — e-mail sem convite pendente levanta W2004
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
+  BEGIN
+    PERFORM public.cancel_invitation('smoke-cancel@test.local');
+    RAISE EXCEPTION 'FALHA 4.2: cancelamento de convite inexistente não levantou erro';
+  EXCEPTION WHEN sqlstate 'W2004' THEN NULL;
+  END;
+
+  -- 4.3 a 4.6 — cancela convite pendente de verdade; audita 'cancel'; preserva 'invite'
+  PERFORM public.create_invitation('smoke-cancel@test.local', 'viewer'::public.app_role);
+  IF NOT EXISTS (SELECT 1 FROM public.invitations
+                  WHERE email = 'smoke-cancel@test.local' AND consumed_at IS NULL) THEN
+    RAISE EXCEPTION 'FALHA 4.3: convite não foi criado como pendente';
+  END IF;
+
+  PERFORM public.cancel_invitation('smoke-cancel@test.local');
+
+  IF EXISTS (SELECT 1 FROM public.invitations WHERE email = 'smoke-cancel@test.local') THEN
+    RAISE EXCEPTION 'FALHA 4.4: convite continua existindo após cancel_invitation';
+  END IF;
+
+  SELECT count(*) INTO v_count FROM public.role_audit_log
+   WHERE target_email = 'smoke-cancel@test.local' AND action = 'invite';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'FALHA 4.5: linha de auditoria "invite" não foi preservada (achou %)', v_count;
+  END IF;
+
+  SELECT count(*) INTO v_count FROM public.role_audit_log
+   WHERE target_email = 'smoke-cancel@test.local' AND action = 'cancel' AND actor_user_id = v_admin;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'FALHA 4.6: linha de auditoria "cancel" ausente (achou %)', v_count;
+  END IF;
+
+  RAISE NOTICE 'Seção 4 OK';
+END $$;
+
 ROLLBACK;
