@@ -28,7 +28,10 @@ export async function fetchPlatformUsers(): Promise<PlatformUser[]> {
     page: 1,
     perPage: PER_PAGE,
   });
-  if (error) throw error;
+  if (error) {
+    console.error("[admin] listUsers falhou:", error);
+    throw new Error("Não foi possível carregar a lista de usuários");
+  }
 
   if (data.users.length === PER_PAGE) {
     console.warn(
@@ -39,7 +42,10 @@ export async function fetchPlatformUsers(): Promise<PlatformUser[]> {
   const { data: roles, error: rolesError } = await supabaseAdmin
     .from("user_roles")
     .select("user_id, role");
-  if (rolesError) throw rolesError;
+  if (rolesError) {
+    console.error("[admin] leitura de user_roles falhou:", rolesError);
+    throw new Error("Não foi possível carregar os papéis dos usuários");
+  }
 
   const roleByUser = new Map<string, AppRole>(roles.map((r) => [r.user_id, r.role as AppRole]));
 
@@ -73,7 +79,10 @@ export async function createInviteLink(input: {
       ? await supabaseAdmin.auth.admin.generateLink({ type: "invite", email, options })
       : await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email, options });
 
-  if (error) throw error;
+  if (error) {
+    console.error("[admin] generateLink falhou:", error);
+    throw new Error("Não foi possível gerar o link de convite");
+  }
 
   const link = data.properties?.action_link;
   if (!link) throw new Error("O Supabase não retornou o link de convite");
