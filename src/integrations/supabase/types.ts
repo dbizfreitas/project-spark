@@ -261,6 +261,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_invitation: {
+        Args: {
+          _email: string
+        }
+        Returns: undefined
+      }
       create_invitation: {
         Args: {
           _email: string
@@ -280,7 +286,7 @@ export type Database = {
       allocation_status: "nao_especificada" | "especificada"
       allocation_tipo: "planejado" | "bug" | "evolutiva" | "ferias"
       app_role: "admin" | "editor" | "viewer"
-      role_audit_action: "invite" | "grant" | "revoke" | "bootstrap"
+      role_audit_action: "invite" | "grant" | "revoke" | "bootstrap" | "cancel"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -411,7 +417,7 @@ export const Constants = {
       allocation_status: ["nao_especificada", "especificada"],
       allocation_tipo: ["planejado", "bug", "evolutiva", "ferias"],
       app_role: ["admin", "editor", "viewer"],
-      role_audit_action: ["invite", "grant", "revoke", "bootstrap"],
+      role_audit_action: ["invite", "grant", "revoke", "bootstrap", "cancel"],
     },
   },
 } as const

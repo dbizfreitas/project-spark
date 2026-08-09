@@ -11,7 +11,7 @@ export type PlatformUser = {
 
 export type AuditEntry = {
   id: string;
-  action: "invite" | "grant" | "revoke" | "bootstrap";
+  action: "invite" | "grant" | "revoke" | "bootstrap" | "cancel";
   target_email: string | null;
   actor_email: string | null;
   previous_role: AppRole | null;
@@ -36,4 +36,5 @@ export const ACTION_LABELS: Record<AuditEntry["action"], string> = {
   grant: "Concessão",
   revoke: "Revogação",
   bootstrap: "Bootstrap",
+  cancel: "Convite cancelado",
 };
