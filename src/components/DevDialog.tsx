@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { TEAM_COLORS, initialsFrom, type Dev, type Team } from "@/lib/board";
+import type { JiraProjectKey } from "@/lib/projects";
 
 const NEW_TEAM = "__new__";
 
@@ -28,11 +29,13 @@ export function DevDialog({
   dev,
   open,
   count,
+  project,
   onOpenChange,
 }: {
   dev: Dev | null;
   open: boolean;
   count: number;
+  project: JiraProjectKey;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
@@ -41,10 +44,19 @@ export function DevDialog({
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamColor, setNewTeamColor] = useState(TEAM_COLORS[0]!);
 
+  // MESMA queryKey do BoardGrid, de propósito: chaves diferentes fariam os dois
+  // componentes brigarem pela mesma entrada de cache e o diálogo listaria times
+  // do projeto errado. Como só existem times do projeto atual na lista, mover
+  // uma pessoa para um time de outro projeto é impossível pela tela — e a FK
+  // composta cobre o resto.
   const teamsQ = useQuery({
-    queryKey: ["teams"],
+    queryKey: ["board", "teams", project],
     queryFn: async () => {
-      const { data, error } = await supabase.from("teams").select("*").order("position");
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("jira_project", project)
+        .order("position");
       if (error) throw error;
       return data as Team[];
     },
@@ -70,6 +82,9 @@ export function DevDialog({
             name: newTeamName.trim(),
             color: newTeamColor,
             position: teams.length,
+            // teams é raiz do eixo das colunas: o projeto é explícito, vem da
+            // tela e não tem DEFAULT no banco.
+            jira_project: project,
           })
           .select("id")
           .single();
@@ -77,6 +92,8 @@ export function DevDialog({
         finalTeamId = teamRes.data.id;
       }
 
+      // Sem jira_project no payload de devs: o trigger devs_set_project o
+      // deriva do time, e sobrescreveria o que fosse enviado.
       const payload = {
         name: name.trim(),
         initials: initialsFrom(name),
@@ -89,15 +106,14 @@ export function DevDialog({
       if (res.error) throw res.error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["devs"] });
-      qc.invalidateQueries({ queryKey: ["teams"] });
+      qc.invalidateQueries({ queryKey: ["board", "devs"] });
+      qc.invalidateQueries({ queryKey: ["board", "teams"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const canSave =
-    name.trim().length > 0 && (teamId !== NEW_TEAM || newTeamName.trim().length > 0);
+  const canSave = name.trim().length > 0 && (teamId !== NEW_TEAM || newTeamName.trim().length > 0);
 
   const remove = useMutation({
     mutationFn: async () => {
@@ -106,8 +122,8 @@ export function DevDialog({
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["devs"] });
-      qc.invalidateQueries({ queryKey: ["allocations"] });
+      qc.invalidateQueries({ queryKey: ["board", "devs"] });
+      qc.invalidateQueries({ queryKey: ["board", "allocations"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),

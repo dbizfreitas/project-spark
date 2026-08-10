@@ -41,15 +41,30 @@ import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDia
 import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
 import { ThemeToggle } from "./ThemeToggle";
+import { ProjectSelect } from "./ProjectSelect";
+import { JIRA_PROJECTS, isJiraProjectKey, type JiraProjectKey } from "@/lib/projects";
 
 export function BoardGrid({
   email,
   canEdit,
   isAdmin,
+  project,
+  onProjectChange,
 }: {
   email: string;
   canEdit: boolean;
   isAdmin: boolean;
+  /**
+   * Componente CONTROLADO: o projeto e a persistência moram em
+   * routes/index.tsx. Quando a navegação unificada subir o seletor para a
+   * casca compartilhada, o filtro e as queryKeys daqui não mudam — só sai o
+   * <ProjectSelect> do header.
+   *
+   * `null` é inalcançável em prática (a rota cai em JIRA_PROJECTS[0]); o ramo
+   * existe para a lista de projetos vazia.
+   */
+  project: JiraProjectKey | null;
+  onProjectChange: (p: JiraProjectKey) => void;
 }) {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<AllocationDraft | null>(null);
@@ -66,12 +81,25 @@ export function BoardGrid({
   const [tipoFilter, setTipoFilter] = useState<AllocationTipo | "todos">("todos");
   const [dragOver, setDragOver] = useState<string | null>(null);
 
+  // As quatro queries são `select("*")` planas com um `.eq("jira_project", …)`
+  // cada — sem `!inner`, sem query dependente: `devs` e `allocations` têm o
+  // projeto denormalizado, derivado do pai por trigger no banco.
+  //
+  // O projeto entra na queryKey obrigatoriamente. DevDialog usa a MESMA chave
+  // de `teams`; se as duas divergissem, os dois componentes brigariam pela
+  // mesma entrada de cache e o diálogo listaria times do projeto errado.
+  //
+  // `enabled: !!project`: no TanStack Query v5 uma query desabilitada tem
+  // isPending true e isFetching false, logo isLoading === false — o `loading`
+  // composto abaixo não fica preso em "Carregando quadro...".
   const devsQ = useQuery({
-    queryKey: ["devs"],
+    queryKey: ["board", "devs", project],
+    enabled: !!project,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("devs")
         .select("*")
+        .eq("jira_project", project!)
         .order("position")
         .order("name");
       if (error) throw error;
@@ -80,20 +108,27 @@ export function BoardGrid({
   });
 
   const teamsQ = useQuery({
-    queryKey: ["teams"],
+    queryKey: ["board", "teams", project],
+    enabled: !!project,
     queryFn: async () => {
-      const { data, error } = await supabase.from("teams").select("*").order("position");
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("jira_project", project!)
+        .order("position");
       if (error) throw error;
       return data as Team[];
     },
   });
 
   const sprintsQ = useQuery({
-    queryKey: ["sprints"],
+    queryKey: ["board", "sprints", project],
+    enabled: !!project,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sprints")
         .select("*")
+        .eq("jira_project", project!)
         .order("start_date")
         .order("position");
       if (error) throw error;
@@ -102,14 +137,21 @@ export function BoardGrid({
   });
 
   const allocQ = useQuery({
-    queryKey: ["allocations"],
+    queryKey: ["board", "allocations", project],
+    enabled: !!project,
     queryFn: async () => {
-      const { data, error } = await supabase.from("allocations").select("*").order("position");
+      const { data, error } = await supabase
+        .from("allocations")
+        .select("*")
+        .eq("jira_project", project!)
+        .order("position");
       if (error) throw error;
       return data as Allocation[];
     },
   });
 
+  // Sem mudança no payload: o projeto do cartão é recalculado pelo trigger a
+  // cada movimento, e allocations_sprint_project_fkey valida o destino.
   const move = useMutation({
     mutationFn: async (v: { id: string; sprint_id: string; dev_id: string }) => {
       const { error } = await supabase
@@ -118,9 +160,16 @@ export function BoardGrid({
         .eq("id", v.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["allocations"] }),
+    // Invalida pelo PREFIXO, sem o projeto: derruba o cache do projeto atual e
+    // o dos outros que estiverem em cache, que é o comportamento desejado.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["board", "allocations"] }),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  function handleProjectChange(key: string) {
+    // O Radix devolve `string`; isJiraProjectKey é o portão.
+    if (isJiraProjectKey(key)) onProjectChange(key);
+  }
 
   const teams = teamsQ.data ?? [];
   const sprints = sprintsQ.data ?? [];
@@ -179,6 +228,8 @@ export function BoardGrid({
               <p className="text-[11px] text-muted-foreground">Alocação de demandas do time</p>
             </div>
 
+            <ProjectSelect value={project} options={JIRA_PROJECTS} onChange={handleProjectChange} />
+
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -194,6 +245,7 @@ export function BoardGrid({
                 <Button
                   size="sm"
                   variant="secondary"
+                  disabled={!project}
                   onClick={() => setSprintDialog({ open: true, sprint: null })}
                 >
                   <CalendarPlus className="size-4" /> Sprint
@@ -201,6 +253,7 @@ export function BoardGrid({
                 <Button
                   size="sm"
                   variant="secondary"
+                  disabled={!project}
                   onClick={() => setDevDialog({ open: true, dev: null })}
                 >
                   <UserPlus className="size-4" /> Pessoa
@@ -275,18 +328,25 @@ export function BoardGrid({
         </header>
 
         <main className="min-h-0 flex-1 p-4">
-          {loading ? (
+          {/* O ramo sem projeto vem PRIMEIRO: com as queries desabilitadas,
+              `loading` é false e `sprints`/`devs` são [], então a cadeia cairia
+              no EmptyState e pediria para cadastrar sprint num projeto que não
+              existe. Mesma frase que o Cycle Time já usa. */}
+          {!project ? (
+            <p className="py-20 text-center text-sm text-muted-foreground">Selecione um projeto.</p>
+          ) : loading ? (
             <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
           ) : sprints.length === 0 || devs.length === 0 ? (
             canEdit ? (
               <EmptyState
+                project={project}
                 hasDevs={devs.length > 0}
                 onAddSprint={() => setSprintDialog({ open: true, sprint: null })}
                 onAddDev={() => setDevDialog({ open: true, dev: null })}
               />
             ) : (
               <p className="py-20 text-center text-sm text-muted-foreground">
-                O quadro ainda não foi montado.
+                O quadro do {project} ainda não foi montado.
               </p>
             )
           ) : (
@@ -374,19 +434,30 @@ export function BoardGrid({
           )}
         </main>
 
+        {/* AllocationDialog fica fora do condicional: não depende de projeto
+            (o cartão herda o da pessoa no banco) e envolvê-lo remontaria o
+            diálogo sem motivo. */}
         <AllocationDialog draft={draft} onOpenChange={(o) => !o && setDraft(null)} />
-        <DevDialog
-          dev={devDialog.dev}
-          open={devDialog.open}
-          count={devs.length}
-          onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
-        />
-        <SprintDialog
-          sprint={sprintDialog.sprint}
-          open={sprintDialog.open}
-          count={sprints.length}
-          onOpenChange={(o) => setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })}
-        />
+        {project ? (
+          <>
+            <DevDialog
+              dev={devDialog.dev}
+              open={devDialog.open}
+              count={devs.length}
+              project={project}
+              onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
+            />
+            <SprintDialog
+              sprint={sprintDialog.sprint}
+              open={sprintDialog.open}
+              count={sprints.length}
+              project={project}
+              onOpenChange={(o) =>
+                setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })
+              }
+            />
+          </>
+        ) : null}
       </div>
     </TooltipProvider>
   );
@@ -599,20 +670,22 @@ function FilterChip({
 }
 
 function EmptyState({
+  project,
   hasDevs,
   onAddSprint,
   onAddDev,
 }: {
+  project: JiraProjectKey;
   hasDevs: boolean;
   onAddSprint: () => void;
   onAddDev: () => void;
 }) {
   return (
     <div className="mx-auto max-w-md rounded-xl border border-dashed border-grid-line bg-surface p-10 text-center">
-      <h2 className="text-lg font-semibold">Vamos montar seu quadro</h2>
+      <h2 className="text-lg font-semibold">Vamos montar seu quadro do {project}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Cadastre as pessoas do time e as sprints. Depois é só clicar em cada célula para alocar as
-        demandas.
+        Cadastre as pessoas e as sprints do {project}. Depois é só clicar em cada célula para alocar
+        as demandas.
       </p>
       <div className="mt-6 flex justify-center gap-2">
         <Button onClick={onAddDev} variant={hasDevs ? "outline" : "default"}>

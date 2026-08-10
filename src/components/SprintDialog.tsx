@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import type { Sprint } from "@/lib/board";
+import type { JiraProjectKey } from "@/lib/projects";
 
 function diffDays(a: string, b: string) {
   const ms = new Date(b).getTime() - new Date(a).getTime();
@@ -24,11 +25,13 @@ export function SprintDialog({
   sprint,
   open,
   count,
+  project,
   onOpenChange,
 }: {
   sprint: Sprint | null;
   open: boolean;
   count: number;
+  project: JiraProjectKey;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
@@ -54,6 +57,10 @@ export function SprintDialog({
         end_date: end,
         days: diffDays(start, end),
         position: sprint?.position ?? count,
+        // sprints é raiz do eixo das linhas: cada projeto tem seu calendário e
+        // o projeto vem da tela, sem campo no formulário e sem DEFAULT no
+        // banco. Nenhum campo novo aparece — só o texto do título.
+        jira_project: project,
       };
       const res = sprint
         ? await supabase.from("sprints").update(payload).eq("id", sprint.id)
@@ -61,7 +68,7 @@ export function SprintDialog({
       if (res.error) throw res.error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sprints"] });
+      qc.invalidateQueries({ queryKey: ["board", "sprints"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -74,8 +81,8 @@ export function SprintDialog({
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sprints"] });
-      qc.invalidateQueries({ queryKey: ["allocations"] });
+      qc.invalidateQueries({ queryKey: ["board", "sprints"] });
+      qc.invalidateQueries({ queryKey: ["board", "allocations"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -87,7 +94,11 @@ export function SprintDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{sprint ? "Editar sprint" : "Nova sprint"}</DialogTitle>
+          {/* O projeto aparece como texto, não como campo: não deve haver
+              dúvida de onde a sprint vai nascer. */}
+          <DialogTitle>
+            {sprint ? "Editar sprint" : "Nova sprint"} · {project}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

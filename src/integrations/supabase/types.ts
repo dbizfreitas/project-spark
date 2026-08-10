@@ -202,7 +202,7 @@ export type Database = {
           days?: number
           end_date: string
           id?: string
-          jira_project?: string
+          jira_project: string
           position?: number
           quarter?: string
           start_date: string
@@ -213,7 +213,7 @@ export type Database = {
           days?: number
           end_date?: string
           id?: string
-          jira_project?: string
+          jira_project: string
           position?: number
           quarter?: string
           start_date?: string
@@ -233,7 +233,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
-          jira_project?: string
+          jira_project: string
           name: string
           position?: number
         }
@@ -241,7 +241,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
-          jira_project?: string
+          jira_project: string
           name?: string
           position?: number
         }
