@@ -14,6 +14,7 @@ import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CompromissoRouteImport } from './routes/compromisso'
 import { Route as CycleTimeRouteImport } from './routes/cycle-time'
+import { Route as RetrospectivasRouteImport } from './routes/retrospectivas'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const CycleTimeRoute = CycleTimeRouteImport.update({
   path: '/cycle-time',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RetrospectivasRoute = RetrospectivasRouteImport.update({
+  id: '/retrospectivas',
+  path: '/retrospectivas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
   '/cycle-time': typeof CycleTimeRoute
+  '/retrospectivas': typeof RetrospectivasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
   '/cycle-time': typeof CycleTimeRoute
+  '/retrospectivas': typeof RetrospectivasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,25 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
   '/cycle-time': typeof CycleTimeRoute
+  '/retrospectivas': typeof RetrospectivasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/aceitar-convite' | '/admin' | '/compromisso' | '/cycle-time'
+    | '/'
+    | '/aceitar-convite'
+    | '/admin'
+    | '/compromisso'
+    | '/cycle-time'
+    | '/retrospectivas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aceitar-convite' | '/admin' | '/compromisso' | '/cycle-time'
+  to:
+    | '/'
+    | '/aceitar-convite'
+    | '/admin'
+    | '/compromisso'
+    | '/cycle-time'
+    | '/retrospectivas'
   id:
     | '__root__'
     | '/'
@@ -76,6 +96,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/compromisso'
     | '/cycle-time'
+    | '/retrospectivas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -84,6 +105,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   CompromissoRoute: typeof CompromissoRoute
   CycleTimeRoute: typeof CycleTimeRoute
+  RetrospectivasRoute: typeof RetrospectivasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CycleTimeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/retrospectivas': {
+      id: '/retrospectivas'
+      path: '/retrospectivas'
+      fullPath: '/retrospectivas'
+      preLoaderRoute: typeof RetrospectivasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -132,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   CompromissoRoute: CompromissoRoute,
   CycleTimeRoute: CycleTimeRoute,
+  RetrospectivasRoute: RetrospectivasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

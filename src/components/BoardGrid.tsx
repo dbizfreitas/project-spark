@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   CalendarPlus,
   ClipboardList,
+  Dices,
   ExternalLink,
   LayoutGrid,
   LogOut,
@@ -221,6 +222,11 @@ export function BoardGrid({
             <Button size="sm" variant="ghost" asChild>
               <Link to="/compromisso">
                 <ClipboardList className="size-4" /> Compromisso
+              </Link>
+            </Button>
+            <Button size="sm" variant="ghost" asChild>
+              <Link to="/retrospectivas">
+                <Dices className="size-4" /> Retrospectivas
               </Link>
             </Button>
             <ThemeToggle />
