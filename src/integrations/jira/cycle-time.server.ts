@@ -293,14 +293,19 @@ export async function fetchCycleTime(
   // injeta JQL arbitrário e lê projetos fora da lista permitida. É controle de
   // segurança, não conveniência. Mesma mensagem de fetchSprintsForProject —
   // uma string, um significado.
-  if (!ALLOWED_PROJECTS.has(project.toUpperCase())) {
+  //
+  // Normalizado UMA vez e reusado daqui pra baixo (JQL, path da API, chave de
+  // cache) — sem isso "PIM" e "pim" validam igual mas geram entradas de cache
+  // e chamadas ao Jira diferentes, fragmentando a coalescência.
+  const key = project.toUpperCase();
+  if (!ALLOWED_PROJECTS.has(key)) {
     throw new Error("projeto inválido ou não permitido");
   }
 
   const full = mode === "full";
   const excludeStatuses = full ? EXCLUDE_FULL : EXCLUDE_STANDARD;
   const jqlExclude = full ? JQL_EXCLUDE_FULL : JQL_EXCLUDE_STANDARD;
-  const cacheKey = full ? `ct:full:${project}` : `ct:std:${project}`;
+  const cacheKey = full ? `ct:full:${key}` : `ct:std:${key}`;
 
   if (!force) {
     const cached = getCache<CycleTimeResponse>(cacheKey);
@@ -314,8 +319,8 @@ export async function fetchCycleTime(
     // global também vale entre chaves diferentes.
     const [projectStatuses, rawIssues] = await withConcurrencyGate(() =>
       Promise.all([
-        fetchProjectStatuses(project, excludeStatuses),
-        fetchCycleTimeIssues(project, jqlExclude, full),
+        fetchProjectStatuses(key, excludeStatuses),
+        fetchCycleTimeIssues(key, jqlExclude, full),
       ]),
     );
     const built = buildCtPayload(rawIssues, projectStatuses, excludeStatuses);

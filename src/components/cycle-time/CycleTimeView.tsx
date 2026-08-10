@@ -184,7 +184,7 @@ export function CycleTimeView({ email }: { email: string }) {
             <CycleTimePane
               project={project}
               isLoading={stdQ.isLoading}
-              error={stdQ.error}
+              error={stdQ.error ?? projectsQ.error}
               issues={std.issues}
               columns={std.columns}
               mode="standard"
@@ -197,7 +197,7 @@ export function CycleTimeView({ email }: { email: string }) {
             <CycleTimePane
               project={project}
               isLoading={fullQ.isLoading}
-              error={fullQ.error}
+              error={fullQ.error ?? projectsQ.error}
               issues={full.issues}
               columns={full.columns}
               mode="full"
