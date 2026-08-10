@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CycleTimeView } from "@/components/cycle-time/CycleTimeView";
-import { useShell } from "@/components/shell/shell-context";
 
 export const Route = createFileRoute("/_shell/cycle-time")({
   ssr: false,
@@ -18,7 +17,5 @@ export const Route = createFileRoute("/_shell/cycle-time")({
 });
 
 function CycleTimePage() {
-  // Prop temporária — some na Task 6, junto com o <header> do painel.
-  const { email } = useShell();
-  return <CycleTimeView email={email} />;
+  return <CycleTimeView />;
 }
