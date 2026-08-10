@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CompromissoRouteImport } from './routes/compromisso'
+import { Route as CycleTimeRouteImport } from './routes/cycle-time'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const CompromissoRoute = CompromissoRouteImport.update({
   path: '/compromisso',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CycleTimeRoute = CycleTimeRouteImport.update({
+  id: '/cycle-time',
+  path: '/cycle-time',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aceitar-convite': typeof AceitarConviteRoute
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
+  '/cycle-time': typeof CycleTimeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aceitar-convite': typeof AceitarConviteRoute
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
+  '/cycle-time': typeof CycleTimeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,21 @@ export interface FileRoutesById {
   '/aceitar-convite': typeof AceitarConviteRoute
   '/admin': typeof AdminRoute
   '/compromisso': typeof CompromissoRoute
+  '/cycle-time': typeof CycleTimeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/aceitar-convite' | '/admin' | '/compromisso'
+  fullPaths:
+    '/' | '/aceitar-convite' | '/admin' | '/compromisso' | '/cycle-time'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aceitar-convite' | '/admin' | '/compromisso'
-  id: '__root__' | '/' | '/aceitar-convite' | '/admin' | '/compromisso'
+  to: '/' | '/aceitar-convite' | '/admin' | '/compromisso' | '/cycle-time'
+  id:
+    | '__root__'
+    | '/'
+    | '/aceitar-convite'
+    | '/admin'
+    | '/compromisso'
+    | '/cycle-time'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +83,7 @@ export interface RootRouteChildren {
   AceitarConviteRoute: typeof AceitarConviteRoute
   AdminRoute: typeof AdminRoute
   CompromissoRoute: typeof CompromissoRoute
+  CycleTimeRoute: typeof CycleTimeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompromissoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cycle-time': {
+      id: '/cycle-time'
+      path: '/cycle-time'
+      fullPath: '/cycle-time'
+      preLoaderRoute: typeof CycleTimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +131,7 @@ const rootRouteChildren: RootRouteChildren = {
   AceitarConviteRoute: AceitarConviteRoute,
   AdminRoute: AdminRoute,
   CompromissoRoute: CompromissoRoute,
+  CycleTimeRoute: CycleTimeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
