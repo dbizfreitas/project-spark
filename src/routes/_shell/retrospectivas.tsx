@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouletteView } from "@/components/retrospectivas/RouletteView";
-import { useShell } from "@/components/shell/shell-context";
 
 // canView, não canEdit: sortear não escreve no banco. E não é público — os
 // dados exibidos são exatamente o que a migration de RBAC fechou nas tabelas
@@ -21,7 +20,5 @@ export const Route = createFileRoute("/_shell/retrospectivas")({
 });
 
 function RetrospectivasPage() {
-  // Prop temporária — some na Task 7, junto com o <header> do painel.
-  const { email } = useShell();
-  return <RouletteView email={email} />;
+  return <RouletteView />;
 }
