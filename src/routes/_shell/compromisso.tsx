@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CompromissoView } from "@/components/compromisso/CompromissoView";
-import { useShell } from "@/components/shell/shell-context";
 
 export const Route = createFileRoute("/_shell/compromisso")({
   ssr: false,
@@ -17,9 +16,5 @@ export const Route = createFileRoute("/_shell/compromisso")({
 });
 
 function CompromissoPage() {
-  // `email` continua vindo por prop nesta task porque o <header> do painel
-  // ainda existe (ele tem o botão de logout). A Task 5 remove a prop e estas
-  // duas linhas viram `return <CompromissoView />;`.
-  const { email } = useShell();
-  return <CompromissoView email={email} />;
+  return <CompromissoView />;
 }

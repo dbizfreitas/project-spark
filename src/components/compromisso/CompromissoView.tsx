@@ -1,19 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutGrid, LogOut, Timer } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  getJiraIssues,
-  getJiraProjects,
-  getJiraSprint,
-  getJiraSprints,
-} from "@/integrations/jira/server-fns";
+import { getJiraIssues, getJiraSprint, getJiraSprints } from "@/integrations/jira/server-fns";
 import { computeContabilizados, isDoneInSprint, sprintDoneBound } from "@/lib/compromisso/calc";
 import type { IssueResponse, SprintResponse } from "@/lib/compromisso/types";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { useShell } from "@/components/shell/shell-context";
 import { CompromissoSidebar, type ViewMode } from "./CompromissoSidebar";
 import { SprintBar } from "./SprintBar";
 import { StatsCards } from "./StatsCards";
@@ -37,18 +28,14 @@ const REJECTED_STATUSES = new Set([
 
 const AUTO_REFRESH_MS = 10 * 60_000;
 
-const ls = (key: string) => {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-export function CompromissoView({ email }: { email: string }) {
+export function CompromissoView() {
   const qc = useQueryClient();
 
-  const [project, setProject] = useState<string | null>(() => ls("compromissoLastProject"));
+  // Projeto e sessão vêm da casca. Foram-se: o estado `project`, a query
+  // ["jira","projects"] duplicada, o efeito "se não tem projeto, pega o
+  // primeiro" e a chave `compromissoLastProject`.
+  const { project } = useShell();
+
   const [sprintId, setSprintId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [statusSel, setStatusSel] = useState<Set<string>>(new Set());
@@ -56,17 +43,9 @@ export function CompromissoView({ email }: { email: string }) {
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [, setTick] = useState(0);
 
-  const projectsQ = useQuery({ queryKey: ["jira", "projects"], queryFn: () => getJiraProjects() });
-
-  useEffect(() => {
-    const first = projectsQ.data?.[0];
-    if (!project && first) setProject(first.key);
-  }, [project, projectsQ.data]);
-
   const sprintsQ = useQuery({
     queryKey: ["jira", "sprints", project],
-    queryFn: () => getJiraSprints({ data: { project: project! } }),
-    enabled: !!project,
+    queryFn: () => getJiraSprints({ data: { project } }),
   });
 
   // Ao trocar de projeto, esquece a sprint selecionada — evita mostrar dados
@@ -167,15 +146,6 @@ export function CompromissoView({ email }: { email: string }) {
     });
   }
 
-  function handleProjectChange(p: string) {
-    setProject(p);
-    try {
-      localStorage.setItem("compromissoLastProject", p);
-    } catch {
-      // ignore
-    }
-  }
-
   const vis = useMemo(() => {
     let list = issues;
     if (viewMode === "done") {
@@ -228,14 +198,12 @@ export function CompromissoView({ email }: { email: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sprintData?.state, sprintId]);
 
-  const loadError = issuesQ.error ?? sprintQ.error ?? sprintsQ.error ?? projectsQ.error;
+  const loadError = issuesQ.error ?? sprintQ.error ?? sprintsQ.error;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    // `min-h-0 flex-1` em vez de `h-screen`: quem ocupa a viewport é a casca.
+    <div className="flex min-h-0 flex-1 overflow-hidden bg-background">
       <CompromissoSidebar
-        projects={projectsQ.data ?? []}
-        project={project}
-        onProjectChange={handleProjectChange}
         sprints={sprintsQ.data ?? []}
         sprintId={sprintId}
         onSprintChange={setSprintId}
@@ -254,34 +222,8 @@ export function CompromissoView({ email }: { email: string }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="flex items-center gap-3 border-b bg-card px-4 py-3">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <LayoutGrid className="size-4" />
-          </span>
-          <div className="mr-auto">
-            <h1 className="text-base font-semibold leading-tight">Compromisso</h1>
-            <p className="text-[11px] text-muted-foreground">Acompanhamento da sprint no Jira</p>
-          </div>
-          <Button size="sm" variant="ghost" asChild>
-            <Link to="/">Quadro</Link>
-          </Button>
-          <Button size="sm" variant="ghost" asChild>
-            <Link to="/cycle-time">
-              <Timer className="size-4" /> Cycle Time
-            </Link>
-          </Button>
-          <ThemeToggle />
-          <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
-            <LogOut className="size-4" />
-          </Button>
-        </header>
-
         <main className="flex-1 space-y-4 p-4">
-          {!project ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">
-              Selecione um projeto na barra lateral.
-            </p>
-          ) : loadError ? (
+          {loadError ? (
             <p className="py-20 text-center text-sm text-destructive">
               {loadError instanceof Error ? loadError.message : "Erro ao carregar dados do Jira."}
             </p>

@@ -8,14 +8,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fmtRelativeTime } from "@/lib/compromisso/calc";
-import type { JiraProject, SprintResponse } from "@/lib/compromisso/types";
+import type { SprintResponse } from "@/lib/compromisso/types";
 
 export type ViewMode = "all" | "done";
 
 interface CompromissoSidebarProps {
-  projects: JiraProject[];
-  project: string | null;
-  onProjectChange: (project: string) => void;
   sprints: SprintResponse[];
   sprintId: number | null;
   onSprintChange: (id: number) => void;
@@ -34,9 +31,6 @@ interface CompromissoSidebarProps {
 }
 
 export function CompromissoSidebar({
-  projects,
-  project,
-  onProjectChange,
   sprints,
   sprintId,
   onSprintChange,
@@ -57,30 +51,12 @@ export function CompromissoSidebar({
     <nav className="flex h-full w-64 shrink-0 flex-col gap-4 overflow-y-auto border-r border-sidebar-border bg-sidebar p-4 text-sidebar-foreground">
       <div>
         <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Projeto
-        </div>
-        <Select {...(project ? { value: project } : {})} onValueChange={onProjectChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione um projeto…" />
-          </SelectTrigger>
-          <SelectContent>
-            {projects.map((p) => (
-              <SelectItem key={p.key} value={p.key}>
-                {p.key} — {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Sprint
         </div>
         <Select
           {...(sprintId != null ? { value: String(sprintId) } : {})}
           onValueChange={(v) => onSprintChange(Number(v))}
-          disabled={!project || sprintsLoading || sprints.length === 0}
+          disabled={sprintsLoading || sprints.length === 0}
         >
           <SelectTrigger>
             <SelectValue
