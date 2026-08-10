@@ -10,7 +10,9 @@ import type { IssueResponse, JiraProject, SprintResponse } from "@/lib/compromis
 
 export const getJiraProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<JiraProject[]> => {
+  .handler(async ({ context }): Promise<JiraProject[]> => {
+    const { assertCanViewBoard } = await import("./access.server");
+    await assertCanViewBoard(context.supabase, context.userId);
     const { fetchAllowedProjects } = await import("./projects.server");
     return fetchAllowedProjects();
   });
@@ -18,7 +20,9 @@ export const getJiraProjects = createServerFn({ method: "GET" })
 export const getJiraSprints = createServerFn({ method: "GET" })
   .validator((data: { project: string }) => data)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }): Promise<SprintResponse[]> => {
+  .handler(async ({ context, data }): Promise<SprintResponse[]> => {
+    const { assertCanViewBoard } = await import("./access.server");
+    await assertCanViewBoard(context.supabase, context.userId);
     const { fetchSprintsForProject } = await import("./sprints.server");
     return fetchSprintsForProject(data.project);
   });
@@ -26,7 +30,9 @@ export const getJiraSprints = createServerFn({ method: "GET" })
 export const getJiraSprint = createServerFn({ method: "GET" })
   .validator((data: { id: number }) => data)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }): Promise<SprintResponse> => {
+  .handler(async ({ context, data }): Promise<SprintResponse> => {
+    const { assertCanViewBoard } = await import("./access.server");
+    await assertCanViewBoard(context.supabase, context.userId);
     const { fetchSprintById } = await import("./sprints.server");
     return fetchSprintById(data.id);
   });
@@ -34,7 +40,9 @@ export const getJiraSprint = createServerFn({ method: "GET" })
 export const getJiraIssues = createServerFn({ method: "GET" })
   .validator((data: { sprintId: number }) => data)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }): Promise<IssueResponse[]> => {
+  .handler(async ({ context, data }): Promise<IssueResponse[]> => {
+    const { assertCanViewBoard } = await import("./access.server");
+    await assertCanViewBoard(context.supabase, context.userId);
     const { fetchIssuesForSprint } = await import("./issues.server");
     return fetchIssuesForSprint(data.sprintId);
   });

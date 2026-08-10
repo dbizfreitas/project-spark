@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSession } from "@/hooks/use-session";
+import { useAuthorizedSession } from "@/hooks/use-authorized-session";
 import { AuthCard } from "@/components/AuthCard";
+import { AccessDenied } from "@/components/AccessDenied";
 import { BoardGrid } from "@/components/BoardGrid";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -27,7 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { session, loading } = useSession();
+  const { session, loading, canEdit, isAdmin, canView } = useAuthorizedSession();
 
   if (loading) {
     return (
@@ -39,5 +42,19 @@ function Index() {
 
   if (!session) return <AuthCard />;
 
-  return <BoardGrid email={session.user.email ?? ""} />;
+  if (!canView) {
+    return (
+      <AccessDenied
+        title="Acesso ainda não liberado"
+        description="Sua conta existe, mas nenhum papel foi atribuído. Peça acesso a um administrador da plataforma."
+        action={
+          <Button variant="outline" className="w-full" onClick={() => supabase.auth.signOut()}>
+            Sair
+          </Button>
+        }
+      />
+    );
+  }
+
+  return <BoardGrid email={session.user.email ?? ""} canEdit={canEdit} isAdmin={isAdmin} />;
 }

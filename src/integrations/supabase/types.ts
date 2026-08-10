@@ -112,6 +112,72 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      role_audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["role_audit_action"]
+          actor_email: string | null
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          new_role: Database["public"]["Enums"]["app_role"] | null
+          previous_role: Database["public"]["Enums"]["app_role"] | null
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["role_audit_action"]
+          actor_email?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          new_role?: Database["public"]["Enums"]["app_role"] | null
+          previous_role?: Database["public"]["Enums"]["app_role"] | null
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["role_audit_action"]
+          actor_email?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          new_role?: Database["public"]["Enums"]["app_role"] | null
+          previous_role?: Database["public"]["Enums"]["app_role"] | null
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       sprints: {
         Row: {
           code: string
@@ -195,12 +261,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cancel_invitation: {
+        Args: {
+          _email: string
+        }
+        Returns: undefined
+      }
+      create_invitation: {
+        Args: {
+          _email: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      set_user_role: {
+        Args: {
+          _target: string
+          _role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       allocation_status: "nao_especificada" | "especificada"
       allocation_tipo: "planejado" | "bug" | "evolutiva" | "ferias"
       app_role: "admin" | "editor" | "viewer"
+      role_audit_action: "invite" | "grant" | "revoke" | "bootstrap" | "cancel"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -331,6 +417,7 @@ export const Constants = {
       allocation_status: ["nao_especificada", "especificada"],
       allocation_tipo: ["planejado", "bug", "evolutiva", "ferias"],
       app_role: ["admin", "editor", "viewer"],
+      role_audit_action: ["invite", "grant", "revoke", "bootstrap", "cancel"],
     },
   },
 } as const

@@ -8,7 +8,6 @@ import { LayoutGrid } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function AuthCard() {
-  const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -17,20 +16,8 @@ export function AuthCard() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "in") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          toast.success("Confirme seu e-mail para ativar a conta.");
-        }
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível entrar");
     } finally {
@@ -79,17 +66,13 @@ export function AuthCard() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
-            {mode === "in" ? "Entrar" : "Criar conta"}
+            Entrar
           </Button>
         </form>
 
-        <button
-          type="button"
-          className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => setMode(mode === "in" ? "up" : "in")}
-        >
-          {mode === "in" ? "Não tem conta? Criar acesso" : "Já tenho conta — entrar"}
-        </button>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          O acesso é concedido por convite. Fale com um administrador da plataforma.
+        </p>
       </div>
     </div>
   );
