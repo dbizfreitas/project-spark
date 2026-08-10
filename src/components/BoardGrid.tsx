@@ -1,24 +1,10 @@
 import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  CalendarPlus,
-  ClipboardList,
-  Dices,
-  ExternalLink,
-  LayoutGrid,
-  LogOut,
-  Pencil,
-  Plus,
-  Search,
-  Timer,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { CalendarPlus, ExternalLink, Pencil, Plus, Search, UserPlus } from "lucide-react";
 import {
   accentClassFor,
   chipClassFor,
@@ -35,21 +21,28 @@ import {
   type Sprint,
   type Team,
 } from "@/lib/board";
+import type { JiraProjectKey } from "@/lib/projects";
+import { boardErrorMessage } from "@/lib/board-errors";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDialog";
 import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
-import { ThemeToggle } from "./ThemeToggle";
 
 export function BoardGrid({
-  email,
   canEdit,
-  isAdmin,
+  project,
 }: {
-  email: string;
   canEdit: boolean;
-  isAdmin: boolean;
+  /**
+   * NÃO ANULÁVEL: a casca (`src/routes/_shell.tsx`) garante uma chave válida
+   * de forma síncrona. O ramo "Selecione um projeto." e o `enabled: !!project`
+   * que existiam aqui eram defesa contra um estado que não existe mais.
+   *
+   * `onProjectChange` saiu: o seletor mora no cabeçalho compartilhado, e um
+   * segundo seletor dentro do quadro é exatamente o que esta frente desfaz.
+   */
+  project: JiraProjectKey;
 }) {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<AllocationDraft | null>(null);
@@ -66,12 +59,20 @@ export function BoardGrid({
   const [tipoFilter, setTipoFilter] = useState<AllocationTipo | "todos">("todos");
   const [dragOver, setDragOver] = useState<string | null>(null);
 
+  // As quatro queries são `select("*")` planas com um `.eq("jira_project", …)`
+  // cada — sem `!inner`, sem query dependente: `devs` e `allocations` têm o
+  // projeto denormalizado, derivado do pai por trigger no banco.
+  //
+  // O projeto entra na queryKey obrigatoriamente. DevDialog usa a MESMA chave
+  // de `teams`; se as duas divergissem, os dois componentes brigariam pela
+  // mesma entrada de cache e o diálogo listaria times do projeto errado.
   const devsQ = useQuery({
-    queryKey: ["devs"],
+    queryKey: ["board", "devs", project],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("devs")
         .select("*")
+        .eq("jira_project", project)
         .order("position")
         .order("name");
       if (error) throw error;
@@ -80,20 +81,25 @@ export function BoardGrid({
   });
 
   const teamsQ = useQuery({
-    queryKey: ["teams"],
+    queryKey: ["board", "teams", project],
     queryFn: async () => {
-      const { data, error } = await supabase.from("teams").select("*").order("position");
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("jira_project", project)
+        .order("position");
       if (error) throw error;
       return data as Team[];
     },
   });
 
   const sprintsQ = useQuery({
-    queryKey: ["sprints"],
+    queryKey: ["board", "sprints", project],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sprints")
         .select("*")
+        .eq("jira_project", project)
         .order("start_date")
         .order("position");
       if (error) throw error;
@@ -102,14 +108,20 @@ export function BoardGrid({
   });
 
   const allocQ = useQuery({
-    queryKey: ["allocations"],
+    queryKey: ["board", "allocations", project],
     queryFn: async () => {
-      const { data, error } = await supabase.from("allocations").select("*").order("position");
+      const { data, error } = await supabase
+        .from("allocations")
+        .select("*")
+        .eq("jira_project", project)
+        .order("position");
       if (error) throw error;
       return data as Allocation[];
     },
   });
 
+  // Sem mudança no payload: o projeto do cartão é recalculado pelo trigger a
+  // cada movimento, e allocations_sprint_project_fkey valida o destino.
   const move = useMutation({
     mutationFn: async (v: { id: string; sprint_id: string; dev_id: string }) => {
       const { error } = await supabase
@@ -118,8 +130,10 @@ export function BoardGrid({
         .eq("id", v.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["allocations"] }),
-    onError: (e: Error) => toast.error(e.message),
+    // Invalida pelo PREFIXO, sem o projeto: derruba o cache do projeto atual e
+    // o dos outros que estiverem em cache, que é o comportamento desejado.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["board", "allocations"] }),
+    onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
 
   const teams = teamsQ.data ?? [];
@@ -168,17 +182,14 @@ export function BoardGrid({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen flex-col overflow-hidden bg-background">
-        <header className="border-b border-border bg-header text-header-foreground">
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-              <LayoutGrid className="size-4" />
-            </span>
-            <div className="mr-auto">
-              <h1 className="text-base font-semibold leading-tight">Sprint Board</h1>
-              <p className="text-[11px] text-muted-foreground">Alocação de demandas do time</p>
-            </div>
-
+      {/* `min-h-0 flex-1` e não `h-screen`: a casca já ocupa a viewport, e um
+          filho `h-screen` dentro dela produz rolagem dupla. O
+          `overflow-y-auto` do container do grid continua sendo o que rola. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+        {/* Toolbar DO PAINEL: só controles do quadro. Navegação, projeto, tema,
+            logout e "Usuários" moram no cabeçalho da casca. */}
+        <div className="shrink-0 border-b border-border bg-surface-2">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-2.5">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -207,32 +218,6 @@ export function BoardGrid({
                 </Button>
               </>
             ) : null}
-            {isAdmin ? (
-              <Button size="sm" variant="ghost" asChild>
-                <Link to="/admin">
-                  <Users className="size-4" /> Usuários
-                </Link>
-              </Button>
-            ) : null}
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/cycle-time">
-                <Timer className="size-4" /> Cycle Time
-              </Link>
-            </Button>
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/compromisso">
-                <ClipboardList className="size-4" /> Compromisso
-              </Link>
-            </Button>
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/retrospectivas">
-                <Dices className="size-4" /> Retrospectivas
-              </Link>
-            </Button>
-            <ThemeToggle />
-            <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
-              <LogOut className="size-4" />
-            </Button>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-4 py-2">
@@ -272,21 +257,22 @@ export function BoardGrid({
               </FilterChip>
             ))}
           </div>
-        </header>
+        </div>
 
         <main className="min-h-0 flex-1 p-4">
           {loading ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">Carregando alocações…</p>
           ) : sprints.length === 0 || devs.length === 0 ? (
             canEdit ? (
               <EmptyState
+                project={project}
                 hasDevs={devs.length > 0}
                 onAddSprint={() => setSprintDialog({ open: true, sprint: null })}
                 onAddDev={() => setDevDialog({ open: true, dev: null })}
               />
             ) : (
               <p className="py-20 text-center text-sm text-muted-foreground">
-                O quadro ainda não foi montado.
+                As alocações do {project} ainda não foram montadas.
               </p>
             )
           ) : (
@@ -374,17 +360,22 @@ export function BoardGrid({
           )}
         </main>
 
+        {/* AllocationDialog fica fora do condicional: não depende de projeto
+            (o cartão herda o da pessoa no banco) e envolvê-lo remontaria o
+            diálogo sem motivo. */}
         <AllocationDialog draft={draft} onOpenChange={(o) => !o && setDraft(null)} />
         <DevDialog
           dev={devDialog.dev}
           open={devDialog.open}
           count={devs.length}
+          project={project}
           onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
         />
         <SprintDialog
           sprint={sprintDialog.sprint}
           open={sprintDialog.open}
           count={sprints.length}
+          project={project}
           onOpenChange={(o) => setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })}
         />
       </div>
@@ -599,20 +590,22 @@ function FilterChip({
 }
 
 function EmptyState({
+  project,
   hasDevs,
   onAddSprint,
   onAddDev,
 }: {
+  project: JiraProjectKey;
   hasDevs: boolean;
   onAddSprint: () => void;
   onAddDev: () => void;
 }) {
   return (
     <div className="mx-auto max-w-md rounded-xl border border-dashed border-grid-line bg-surface p-10 text-center">
-      <h2 className="text-lg font-semibold">Vamos montar seu quadro</h2>
+      <h2 className="text-lg font-semibold">Vamos montar as alocações do {project}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Cadastre as pessoas do time e as sprints. Depois é só clicar em cada célula para alocar as
-        demandas.
+        Cadastre as pessoas e as sprints do {project}. Depois é só clicar em cada célula para alocar
+        as demandas.
       </p>
       <div className="mt-6 flex justify-center gap-2">
         <Button onClick={onAddDev} variant={hasDevs ? "outline" : "default"}>

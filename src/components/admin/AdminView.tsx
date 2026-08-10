@@ -24,7 +24,7 @@ export function AdminView({ currentUserId }: { currentUserId: string }) {
           <InviteDialog />
           <Button size="sm" variant="ghost" asChild>
             <Link to="/">
-              <ArrowLeft className="size-4" /> Quadro
+              <ArrowLeft className="size-4" /> Alocações
             </Link>
           </Button>
           <ThemeToggle />

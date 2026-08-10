@@ -33,7 +33,7 @@ function AdminPage() {
         description="Esta área é exclusiva para administradores da plataforma."
         action={
           <Button className="w-full" asChild>
-            <Link to="/">Voltar ao quadro</Link>
+            <Link to="/">Voltar para Alocações</Link>
           </Button>
         }
       />

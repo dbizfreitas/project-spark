@@ -1,22 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, LayoutGrid, LogOut, RefreshCw, Timer } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
-import { getJiraCycleTime, getJiraProjects } from "@/integrations/jira/server-fns";
+import { getJiraCycleTime } from "@/integrations/jira/server-fns";
 import { CYCLE_TIME_CONFIG, buildColumns, mergeStatusVariants } from "@/lib/cycle-time/calc";
 import type { CycleTimeIssue, CycleTimeMode, CycleTimeResponse } from "@/lib/cycle-time/types";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import type { JiraProjectKey } from "@/lib/projects";
+import { useShell } from "@/components/shell/shell-context";
 import { CycleTimeTable } from "./CycleTimeTable";
 
 /** Sub-visão ativa. Nomes do original (localStorage `ctView`). */
@@ -38,10 +30,6 @@ const save = (key: string, value: string) => {
   }
 };
 
-// Chaves próprias, separadas das do Compromisso: são telas independentes, e
-// olhar o Compromisso do PIM enquanto se analisa o Cycle Time do PH é um uso
-// legítimo.
-const LS_PROJECT = "cycleTimeLastProject";
 const LS_VIEW = "cycleTimeView";
 
 function prepare(
@@ -54,44 +42,36 @@ function prepare(
   return { issues, columns: buildColumns(issues, resp.statuses, cfg) };
 }
 
-export function CycleTimeView({ email }: { email: string }) {
+export function CycleTimeView() {
   const qc = useQueryClient();
-  const [project, setProject] = useState<string | null>(() => ls(LS_PROJECT));
+  const { project } = useShell();
   const [subView, setSubView] = useState<CycleTimeSubView>(() =>
     ls(LS_VIEW) === "full" ? "full" : "status",
   );
   const [recalculando, setRecalculando] = useState(false);
 
-  const projectsQ = useQuery({ queryKey: ["jira", "projects"], queryFn: () => getJiraProjects() });
-
-  useEffect(() => {
-    const first = projectsQ.data?.[0];
-    if (!project && first) setProject(first.key);
-  }, [project, projectsQ.data]);
-
   // Duas queries separadas, não uma parametrizada pela aba ativa: alternar
   // entre as sub-visões passa a ser instantâneo (cache do Query) e é o
   // comportamento do original, cujo onProjectChange dispara loadCycleTime() e
   // loadCycleTime2() juntos. O prefixo ["jira", ...] casa o das outras queries.
+  //
+  // Sem `enabled` e sem `project ?? ""`: a casca garante uma chave válida.
   const stdQ = useQuery({
     queryKey: ["jira", "cycle-time", project, "standard"],
-    queryFn: () => getJiraCycleTime({ data: { project: project ?? "", mode: "standard" } }),
-    enabled: !!project,
+    queryFn: () => getJiraCycleTime({ data: { project, mode: "standard" } }),
+    // Casa com o cache de 5 min que `fetchCycleTime` já mantém no servidor:
+    // um refetch antes disso devolveria exatamente o mesmo payload.
+    staleTime: 5 * 60_000,
   });
 
   const fullQ = useQuery({
     queryKey: ["jira", "cycle-time", project, "full"],
-    queryFn: () => getJiraCycleTime({ data: { project: project ?? "", mode: "full" } }),
-    enabled: !!project,
+    queryFn: () => getJiraCycleTime({ data: { project, mode: "full" } }),
+    staleTime: 5 * 60_000,
   });
 
   const std = useMemo(() => prepare(stdQ.data, "standard"), [stdQ.data]);
   const full = useMemo(() => prepare(fullQ.data, "full"), [fullQ.data]);
-
-  function handleProjectChange(p: string) {
-    setProject(p);
-    save(LS_PROJECT, p);
-  }
 
   function handleSubViewChange(v: string) {
     const next: CycleTimeSubView = v === "full" ? "full" : "status";
@@ -100,7 +80,6 @@ export function CycleTimeView({ email }: { email: string }) {
   }
 
   async function handleRecalcular() {
-    if (!project) return;
     setRecalculando(true);
     try {
       // `force` precisa chegar ao SERVIDOR: invalidateQueries sozinho só limpa
@@ -123,68 +102,35 @@ export function CycleTimeView({ email }: { email: string }) {
   const carregando = stdQ.isFetching || fullQ.isFetching || recalculando;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
-        <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-          <Timer className="size-4" />
-        </span>
-        <div className="mr-auto">
-          <h1 className="text-base font-semibold leading-tight">Cycle Time</h1>
-          <p className="text-[11px] text-muted-foreground">
-            Tempo por status, a partir do changelog do Jira
-          </p>
-        </div>
-
-        <Select {...(project ? { value: project } : {})} onValueChange={handleProjectChange}>
-          <SelectTrigger className="h-9 w-56">
-            <SelectValue placeholder="Selecione um projeto…" />
-          </SelectTrigger>
-          <SelectContent>
-            {(projectsQ.data ?? []).map((p) => (
-              <SelectItem key={p.key} value={p.key}>
-                {p.key} — {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={handleRecalcular}
-          disabled={!project || carregando}
-        >
-          <RefreshCw className={`size-4 ${carregando ? "animate-spin" : ""}`} /> Recalcular
-        </Button>
-
-        <Button size="sm" variant="ghost" asChild>
-          <Link to="/">
-            <LayoutGrid className="size-4" /> Quadro
-          </Link>
-        </Button>
-        <Button size="sm" variant="ghost" asChild>
-          <Link to="/compromisso">
-            <ClipboardList className="size-4" /> Compromisso
-          </Link>
-        </Button>
-        <ThemeToggle />
-        <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
-          <LogOut className="size-4" />
-        </Button>
-      </header>
-
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <main className="flex-1 overflow-y-auto p-4">
         <Tabs value={subView} onValueChange={handleSubViewChange}>
-          <TabsList>
-            <TabsTrigger value="status">Em Andamento</TabsTrigger>
-            <TabsTrigger value="full">Histórico Completo</TabsTrigger>
-          </TabsList>
+          {/* Toolbar do painel: as sub-visões e o "Recalcular" na mesma linha.
+              "Recalcular" NÃO virou um botão global de atualizar: ele precisa
+              mandar `force` ao servidor e o "Atualizar dados" do Compromisso
+              faz outra coisa por outro caminho (divergência 4 da spec). */}
+          <div className="flex flex-wrap items-center gap-3">
+            <TabsList>
+              <TabsTrigger value="status">Em Andamento</TabsTrigger>
+              <TabsTrigger value="full">Histórico Completo</TabsTrigger>
+            </TabsList>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              className="ml-auto"
+              onClick={handleRecalcular}
+              disabled={carregando}
+            >
+              <RefreshCw className={`size-4 ${carregando ? "animate-spin" : ""}`} /> Recalcular
+            </Button>
+          </div>
 
           <TabsContent value="status">
             <CycleTimePane
               project={project}
               isLoading={stdQ.isLoading}
-              error={stdQ.error ?? projectsQ.error}
+              error={stdQ.error}
               issues={std.issues}
               columns={std.columns}
               mode="standard"
@@ -197,7 +143,7 @@ export function CycleTimeView({ email }: { email: string }) {
             <CycleTimePane
               project={project}
               isLoading={fullQ.isLoading}
-              error={fullQ.error ?? projectsQ.error}
+              error={fullQ.error}
               issues={full.issues}
               columns={full.columns}
               mode="full"
@@ -221,7 +167,9 @@ function CycleTimePane({
   title,
   subtitle,
 }: {
-  project: string | null;
+  // Não anulável: a casca garante. O ramo "Selecione um projeto." que existia
+  // aqui era defesa contra um estado que não existe mais.
+  project: JiraProjectKey;
   isLoading: boolean;
   error: Error | null;
   issues: CycleTimeIssue[];
@@ -230,9 +178,6 @@ function CycleTimePane({
   title: string;
   subtitle: string | null;
 }) {
-  if (!project) {
-    return <p className="py-20 text-center text-sm text-muted-foreground">Selecione um projeto.</p>;
-  }
   if (error) {
     // error.message já vem traduzido pelo handler de getJiraCycleTime.
     return <p className="py-20 text-center text-sm text-destructive">{error.message}</p>;

@@ -1,12 +1,19 @@
+import type { JiraProjectKey } from "@/lib/projects";
+
 export type AllocationStatus = "nao_especificada" | "especificada";
 
 export type AllocationTipo = "planejado" | "bug" | "evolutiva" | "ferias";
 
+// jira_project é `text` no banco (a lista mora em src/lib/projects.ts, o banco
+// valida só o formato), mas do lado do cliente só as quatro chaves conhecidas
+// chegam a ser desenhadas — daí o tipo estreito. As queries usam
+// `data as Dev[]`, como já usavam.
 export type Team = {
   id: string;
   name: string;
   color: string;
   position: number;
+  jira_project: JiraProjectKey;
 };
 
 export type Dev = {
@@ -16,6 +23,7 @@ export type Dev = {
   team_id: string;
   position: number;
   active: boolean;
+  jira_project: JiraProjectKey;
 };
 
 export type Sprint = {
@@ -26,6 +34,7 @@ export type Sprint = {
   end_date: string;
   days: number;
   position: number;
+  jira_project: JiraProjectKey;
 };
 
 export type Allocation = {
@@ -39,6 +48,7 @@ export type Allocation = {
   tipo: AllocationTipo;
   notes: string | null;
   position: number;
+  jira_project: JiraProjectKey;
 };
 
 export const STATUS_LIST: {

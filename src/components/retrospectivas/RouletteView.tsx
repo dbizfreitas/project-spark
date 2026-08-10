@@ -1,10 +1,7 @@
-import { Link } from "@tanstack/react-router";
-import { Dices, LogOut, RotateCcw, Shuffle } from "lucide-react";
+import { RotateCcw, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { supabase } from "@/integrations/supabase/client";
 import { useRoulette } from "@/hooks/use-roulette";
 import { getPhoto } from "@/lib/retrospectivas/photos";
 import {
@@ -15,7 +12,7 @@ import {
 } from "@/lib/retrospectivas/participants";
 import { ParticipantCard } from "./ParticipantCard";
 
-export function RouletteView({ email }: { email: string }) {
+export function RouletteView() {
   const roulette = useRoulette();
 
   const drawnCount = roulette.drawn.size;
@@ -32,26 +29,14 @@ export function RouletteView({ email }: { email: string }) {
   const winner = winnerIndex === -1 ? undefined : PARTICIPANTS[winnerIndex];
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex items-center gap-3 border-b bg-card px-4 py-3">
-        <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-          <Dices className="size-4" />
-        </span>
-        <div className="mr-auto">
-          <h1 className="text-base font-semibold leading-tight">Roleta de Retrospectiva</h1>
-          {/* Contador é texto real, já legível por leitor de tela. */}
-          <p className="text-[11px] text-muted-foreground">{counter}</p>
-        </div>
-        <Button size="sm" variant="ghost" asChild>
-          <Link to="/">Quadro</Link>
-        </Button>
-        <ThemeToggle />
-        <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
-          <LogOut className="size-4" />
-        </Button>
-      </header>
-
+    // A roleta é a única das quatro sem rolagem interna própria, então ela
+    // rola inteira: `flex-1` + `overflow-y-auto` no lugar do `min-h-screen`.
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background">
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 p-4">
+        {/* Contador é texto real, já legível por leitor de tela. Estava no
+            cabeçalho do painel; desce para cá, acima do Card. */}
+        <p className="text-[11px] text-muted-foreground">{counter}</p>
+
         <Card className="flex flex-col items-center gap-4 p-6">
           {/* A região aria-live existe desde o primeiro render, mesmo vazia: é o
               que faz o leitor de tela anunciar o vencedor quando ele aparece. */}
