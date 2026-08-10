@@ -14,6 +14,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Timer,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -212,6 +213,11 @@ export function BoardGrid({
                 </Link>
               </Button>
             ) : null}
+            <Button size="sm" variant="ghost" asChild>
+              <Link to="/cycle-time">
+                <Timer className="size-4" /> Cycle Time
+              </Link>
+            </Button>
             <Button size="sm" variant="ghost" asChild>
               <Link to="/compromisso">
                 <ClipboardList className="size-4" /> Compromisso
