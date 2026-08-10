@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutGrid, LogOut } from "lucide-react";
+import { LayoutGrid, LogOut, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -264,6 +264,11 @@ export function CompromissoView({ email }: { email: string }) {
           </div>
           <Button size="sm" variant="ghost" asChild>
             <Link to="/">Quadro</Link>
+          </Button>
+          <Button size="sm" variant="ghost" asChild>
+            <Link to="/cycle-time">
+              <Timer className="size-4" /> Cycle Time
+            </Link>
           </Button>
           <ThemeToggle />
           <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
