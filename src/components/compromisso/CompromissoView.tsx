@@ -68,12 +68,16 @@ export function CompromissoView() {
     queryKey: ["jira", "sprint", sprintId],
     queryFn: () => getJiraSprint({ data: { id: sprintId! } }),
     enabled: sprintId != null,
+    // O auto-refresh desta tela é de 10 min; 1 min só cobre o bate-volta entre
+    // guias, sem atrasar o que o usuário espera ver atualizado.
+    staleTime: 60_000,
   });
 
   const issuesQ = useQuery({
     queryKey: ["jira", "issues", sprintId],
     queryFn: () => getJiraIssues({ data: { sprintId: sprintId! } }),
     enabled: sprintId != null,
+    staleTime: 60_000,
   });
 
   useEffect(() => {
