@@ -36,3 +36,25 @@ export function setCache<T>(key: string, data: T, ttlMs = 5 * 60_000): void {
     if (oldestKey !== undefined) store.delete(oldestKey);
   }
 }
+
+const pending = new Map<string, Promise<unknown>>();
+
+// Deduplica requisições CONCORRENTES pra mesma chave (cache stampede): sem
+// isso, duas abas de /cycle-time abertas no mesmo projeto — ou um "Recalcular"
+// coincidindo com outra sessão — cada uma dispara seu próprio fan-out pro Jira
+// em vez de esperar o resultado que já está a caminho. withConcurrencyGate
+// limita o dano a quatro simultâneos; não evita o desperdício.
+//
+// A dedupe do TanStack Query não resolve isto: ela vale por instância de
+// QueryClient, isto é, por aba. A coalescência aqui é do lado do servidor,
+// entre sessões.
+//
+// A 2ª chamada em diante só entra na fila enquanto a 1ª está em voo (sucesso
+// ou erro liberam a chave) — nunca fica presa a um resultado antigo.
+export async function withCacheCoalescing<T>(key: string, compute: () => Promise<T>): Promise<T> {
+  const inFlight = pending.get(key) as Promise<T> | undefined;
+  if (inFlight) return inFlight;
+  const promise = compute().finally(() => pending.delete(key));
+  pending.set(key, promise);
+  return promise;
+}
