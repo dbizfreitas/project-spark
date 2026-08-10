@@ -138,7 +138,7 @@ export function UserTable({ currentUserId }: { currentUserId: string }) {
                       <span className="flex flex-col">
                         <span>Sem acesso</span>
                         <span className="text-[10px] text-muted-foreground">
-                          Não enxerga o quadro
+                          Não enxerga a plataforma
                         </span>
                       </span>
                     </SelectItem>
