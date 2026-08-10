@@ -43,6 +43,7 @@ import { SprintDialog } from "./SprintDialog";
 import { ThemeToggle } from "./ThemeToggle";
 import { ProjectSelect } from "./ProjectSelect";
 import { JIRA_PROJECTS, isJiraProjectKey, type JiraProjectKey } from "@/lib/projects";
+import { boardErrorMessage } from "@/lib/board-errors";
 
 export function BoardGrid({
   email,
@@ -163,7 +164,7 @@ export function BoardGrid({
     // Invalida pelo PREFIXO, sem o projeto: derruba o cache do projeto atual e
     // o dos outros que estiverem em cache, que é o comportamento desejado.
     onSuccess: () => qc.invalidateQueries({ queryKey: ["board", "allocations"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
 
   function handleProjectChange(key: string) {

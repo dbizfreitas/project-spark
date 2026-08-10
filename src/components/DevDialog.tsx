@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { TEAM_COLORS, initialsFrom, type Dev, type Team } from "@/lib/board";
 import type { JiraProjectKey } from "@/lib/projects";
+import { boardErrorMessage } from "@/lib/board-errors";
 
 const NEW_TEAM = "__new__";
 
@@ -110,7 +111,7 @@ export function DevDialog({
       qc.invalidateQueries({ queryKey: ["board", "teams"] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
 
   const canSave = name.trim().length > 0 && (teamId !== NEW_TEAM || newTeamName.trim().length > 0);
@@ -126,7 +127,7 @@ export function DevDialog({
       qc.invalidateQueries({ queryKey: ["board", "allocations"] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
 
   return (

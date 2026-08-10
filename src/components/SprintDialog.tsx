@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import type { Sprint } from "@/lib/board";
 import type { JiraProjectKey } from "@/lib/projects";
+import { boardErrorMessage } from "@/lib/board-errors";
 
 function diffDays(a: string, b: string) {
   const ms = new Date(b).getTime() - new Date(a).getTime();
@@ -71,7 +72,7 @@ export function SprintDialog({
       qc.invalidateQueries({ queryKey: ["board", "sprints"] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
 
   const remove = useMutation({
@@ -85,7 +86,7 @@ export function SprintDialog({
       qc.invalidateQueries({ queryKey: ["board", "allocations"] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
 
   const valid = code.trim() && start && end;
