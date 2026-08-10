@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthorizedSession } from "@/hooks/use-authorized-session";
@@ -38,19 +38,22 @@ const save = (key: string, value: string) => {
   }
 };
 
-type ShellSearch = { project: JiraProjectKey | undefined };
-
 /**
- * Resolução SÍNCRONA e sempre válida: chave inválida na URL já chegou aqui
- * como `undefined` (o `validateSearch` coage), chave inválida no
- * `localStorage` cai no primeiro item da lista. `null` só com `JIRA_PROJECTS`
- * vazia — erro de configuração, tratado uma vez no componente.
+ * Resolução SÍNCRONA e sempre válida: chave inválida no `localStorage` cai no
+ * primeiro item da lista. `null` só com `JIRA_PROJECTS` vazia — erro de
+ * configuração, tratado uma vez no componente.
+ *
+ * Degradação registrada na spec/plano: o projeto NÃO fica na URL
+ * (`?project=`) porque `validateSearch` numa rota de layout se mostrou hostil
+ * — o esquema de busca vazou para rotas fora da casca (`admin.tsx`,
+ * `aceitar-convite.tsx`, `__root.tsx`), exigindo `search` em `<Link to="/">`
+ * em todo o app. `localStorage["lastProject"]` continua sendo a única fonte —
+ * é a mesma chave, só sem o espelho na URL.
  *
  * É esta função que faz o estado "nenhum projeto selecionado" não existir, e é
  * por isso que o contexto declara `project` não anulável.
  */
-function resolveProject(fromUrl: JiraProjectKey | undefined): JiraProjectKey | null {
-  if (fromUrl) return fromUrl;
+function resolveProject(): JiraProjectKey | null {
   const stored = ls(LS_PROJECT);
   if (isJiraProjectKey(stored)) return stored;
   return JIRA_PROJECTS[0]?.key ?? null;
@@ -62,23 +65,12 @@ export const Route = createFileRoute("/_shell")({
   // mantê-los evita que mover um arquivo para fora da casca no futuro reative
   // SSR em silêncio.
   ssr: false,
-  /**
-   * Chave desconhecida é COAGIDA para `undefined`, nunca lançada: um link
-   * antigo para um projeto que saiu da lista tem de abrir a aplicação, não um
-   * erro de rota. `search["project"]` com colchetes por causa de
-   * `noPropertyAccessFromIndexSignature`.
-   */
-  validateSearch: (search: Record<string, unknown>): ShellSearch => {
-    const raw = search["project"];
-    return { project: typeof raw === "string" && isJiraProjectKey(raw) ? raw : undefined };
-  },
   component: Shell,
 });
 
 function Shell() {
   const { session, loading, canEdit, isAdmin, canView } = useAuthorizedSession();
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
+  const [project, setProject] = useState<JiraProjectKey | null>(() => resolveProject());
 
   /**
    * As CHAVES vêm de `JIRA_PROJECTS`; só o RÓTULO vem do Jira. Não existe
@@ -105,25 +97,11 @@ function Shell() {
     [projectsQ.data],
   );
 
-  const project = resolveProject(search.project);
-
-  // Completa a URL no boot, para que qualquer endereço copiado da barra do
-  // navegador já reabra a mesma tela. É o `history.replaceState` do
-  // `syncUrl()` do jira-live, cujo comentário diz literalmente que sem isso
-  // "era impossível mandar um link no Teams que reabrisse a mesma tela".
-  // `replace` e não `push`: uma entrada de histórico por troca de projeto é
-  // ruído.
-  useEffect(() => {
-    if (!project || search.project === project) return;
-    void navigate({ search: (prev) => ({ ...prev, project }), replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project, search.project]);
-
   function handleProjectChange(key: string) {
     // O Radix devolve `string`; isJiraProjectKey é o portão.
     if (!isJiraProjectKey(key)) return;
     save(LS_PROJECT, key);
-    void navigate({ search: (prev) => ({ ...prev, project: key }), replace: true });
+    setProject(key);
   }
 
   if (loading) {

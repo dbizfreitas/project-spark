@@ -76,8 +76,6 @@ export function AppShell({
                 id={`tab-${tab.id}`}
                 role="tab"
                 to={tab.to}
-                // Sem isto o roteador descarta `?project=` ao trocar de guia.
-                search={(prev) => prev}
                 // `exact` é obrigatório para a guia `/`: sem ele, o casamento
                 // por prefixo deixaria Alocações ativa em todas as rotas.
                 activeOptions={{ exact: true }}

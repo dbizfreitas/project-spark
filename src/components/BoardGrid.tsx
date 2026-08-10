@@ -1,24 +1,10 @@
 import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  CalendarPlus,
-  ClipboardList,
-  Dices,
-  ExternalLink,
-  LayoutGrid,
-  LogOut,
-  Pencil,
-  Plus,
-  Search,
-  Timer,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { CalendarPlus, ExternalLink, Pencil, Plus, Search, UserPlus } from "lucide-react";
 import {
   accentClassFor,
   chipClassFor,
@@ -35,37 +21,28 @@ import {
   type Sprint,
   type Team,
 } from "@/lib/board";
+import type { JiraProjectKey } from "@/lib/projects";
+import { boardErrorMessage } from "@/lib/board-errors";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AllocationDialog, toDraft, type AllocationDraft } from "./AllocationDialog";
 import { DevDialog } from "./DevDialog";
 import { SprintDialog } from "./SprintDialog";
-import { ThemeToggle } from "./ThemeToggle";
-import { ProjectSelect } from "./ProjectSelect";
-import { JIRA_PROJECTS, isJiraProjectKey, type JiraProjectKey } from "@/lib/projects";
-import { boardErrorMessage } from "@/lib/board-errors";
 
 export function BoardGrid({
-  email,
   canEdit,
-  isAdmin,
   project,
-  onProjectChange,
 }: {
-  email: string;
   canEdit: boolean;
-  isAdmin: boolean;
   /**
-   * Componente CONTROLADO: o projeto e a persistência moram em
-   * routes/index.tsx. Quando a navegação unificada subir o seletor para a
-   * casca compartilhada, o filtro e as queryKeys daqui não mudam — só sai o
-   * <ProjectSelect> do header.
+   * NÃO ANULÁVEL: a casca (`src/routes/_shell.tsx`) garante uma chave válida
+   * de forma síncrona. O ramo "Selecione um projeto." e o `enabled: !!project`
+   * que existiam aqui eram defesa contra um estado que não existe mais.
    *
-   * `null` é inalcançável em prática (a rota cai em JIRA_PROJECTS[0]); o ramo
-   * existe para a lista de projetos vazia.
+   * `onProjectChange` saiu: o seletor mora no cabeçalho compartilhado, e um
+   * segundo seletor dentro do quadro é exatamente o que esta frente desfaz.
    */
-  project: JiraProjectKey | null;
-  onProjectChange: (p: JiraProjectKey) => void;
+  project: JiraProjectKey;
 }) {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<AllocationDraft | null>(null);
@@ -89,18 +66,13 @@ export function BoardGrid({
   // O projeto entra na queryKey obrigatoriamente. DevDialog usa a MESMA chave
   // de `teams`; se as duas divergissem, os dois componentes brigariam pela
   // mesma entrada de cache e o diálogo listaria times do projeto errado.
-  //
-  // `enabled: !!project`: no TanStack Query v5 uma query desabilitada tem
-  // isPending true e isFetching false, logo isLoading === false — o `loading`
-  // composto abaixo não fica preso em "Carregando quadro...".
   const devsQ = useQuery({
     queryKey: ["board", "devs", project],
-    enabled: !!project,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("devs")
         .select("*")
-        .eq("jira_project", project!)
+        .eq("jira_project", project)
         .order("position")
         .order("name");
       if (error) throw error;
@@ -110,12 +82,11 @@ export function BoardGrid({
 
   const teamsQ = useQuery({
     queryKey: ["board", "teams", project],
-    enabled: !!project,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
         .select("*")
-        .eq("jira_project", project!)
+        .eq("jira_project", project)
         .order("position");
       if (error) throw error;
       return data as Team[];
@@ -124,12 +95,11 @@ export function BoardGrid({
 
   const sprintsQ = useQuery({
     queryKey: ["board", "sprints", project],
-    enabled: !!project,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sprints")
         .select("*")
-        .eq("jira_project", project!)
+        .eq("jira_project", project)
         .order("start_date")
         .order("position");
       if (error) throw error;
@@ -139,12 +109,11 @@ export function BoardGrid({
 
   const allocQ = useQuery({
     queryKey: ["board", "allocations", project],
-    enabled: !!project,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("allocations")
         .select("*")
-        .eq("jira_project", project!)
+        .eq("jira_project", project)
         .order("position");
       if (error) throw error;
       return data as Allocation[];
@@ -166,11 +135,6 @@ export function BoardGrid({
     onSuccess: () => qc.invalidateQueries({ queryKey: ["board", "allocations"] }),
     onError: (e: Error) => toast.error(boardErrorMessage(e)),
   });
-
-  function handleProjectChange(key: string) {
-    // O Radix devolve `string`; isJiraProjectKey é o portão.
-    if (isJiraProjectKey(key)) onProjectChange(key);
-  }
 
   const teams = teamsQ.data ?? [];
   const sprints = sprintsQ.data ?? [];
@@ -218,19 +182,14 @@ export function BoardGrid({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen flex-col overflow-hidden bg-background">
-        <header className="border-b border-border bg-header text-header-foreground">
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-              <LayoutGrid className="size-4" />
-            </span>
-            <div className="mr-auto">
-              <h1 className="text-base font-semibold leading-tight">Sprint Board</h1>
-              <p className="text-[11px] text-muted-foreground">Alocação de demandas do time</p>
-            </div>
-
-            <ProjectSelect value={project} options={JIRA_PROJECTS} onChange={handleProjectChange} />
-
+      {/* `min-h-0 flex-1` e não `h-screen`: a casca já ocupa a viewport, e um
+          filho `h-screen` dentro dela produz rolagem dupla. O
+          `overflow-y-auto` do container do grid continua sendo o que rola. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+        {/* Toolbar DO PAINEL: só controles do quadro. Navegação, projeto, tema,
+            logout e "Usuários" moram no cabeçalho da casca. */}
+        <div className="shrink-0 border-b border-border bg-surface-2">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-2.5">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -246,7 +205,6 @@ export function BoardGrid({
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={!project}
                   onClick={() => setSprintDialog({ open: true, sprint: null })}
                 >
                   <CalendarPlus className="size-4" /> Sprint
@@ -254,39 +212,12 @@ export function BoardGrid({
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={!project}
                   onClick={() => setDevDialog({ open: true, dev: null })}
                 >
                   <UserPlus className="size-4" /> Pessoa
                 </Button>
               </>
             ) : null}
-            {isAdmin ? (
-              <Button size="sm" variant="ghost" asChild>
-                <Link to="/admin">
-                  <Users className="size-4" /> Usuários
-                </Link>
-              </Button>
-            ) : null}
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/cycle-time">
-                <Timer className="size-4" /> Cycle Time
-              </Link>
-            </Button>
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/compromisso">
-                <ClipboardList className="size-4" /> Compromisso
-              </Link>
-            </Button>
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/retrospectivas">
-                <Dices className="size-4" /> Retrospectivas
-              </Link>
-            </Button>
-            <ThemeToggle />
-            <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()} title={email}>
-              <LogOut className="size-4" />
-            </Button>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-4 py-2">
@@ -326,17 +257,11 @@ export function BoardGrid({
               </FilterChip>
             ))}
           </div>
-        </header>
+        </div>
 
         <main className="min-h-0 flex-1 p-4">
-          {/* O ramo sem projeto vem PRIMEIRO: com as queries desabilitadas,
-              `loading` é false e `sprints`/`devs` são [], então a cadeia cairia
-              no EmptyState e pediria para cadastrar sprint num projeto que não
-              existe. Mesma frase que o Cycle Time já usa. */}
-          {!project ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">Selecione um projeto.</p>
-          ) : loading ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">Carregando quadro...</p>
+          {loading ? (
+            <p className="py-20 text-center text-sm text-muted-foreground">Carregando alocações…</p>
           ) : sprints.length === 0 || devs.length === 0 ? (
             canEdit ? (
               <EmptyState
@@ -347,7 +272,7 @@ export function BoardGrid({
               />
             ) : (
               <p className="py-20 text-center text-sm text-muted-foreground">
-                O quadro do {project} ainda não foi montado.
+                As alocações do {project} ainda não foram montadas.
               </p>
             )
           ) : (
@@ -439,26 +364,20 @@ export function BoardGrid({
             (o cartão herda o da pessoa no banco) e envolvê-lo remontaria o
             diálogo sem motivo. */}
         <AllocationDialog draft={draft} onOpenChange={(o) => !o && setDraft(null)} />
-        {project ? (
-          <>
-            <DevDialog
-              dev={devDialog.dev}
-              open={devDialog.open}
-              count={devs.length}
-              project={project}
-              onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
-            />
-            <SprintDialog
-              sprint={sprintDialog.sprint}
-              open={sprintDialog.open}
-              count={sprints.length}
-              project={project}
-              onOpenChange={(o) =>
-                setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })
-              }
-            />
-          </>
-        ) : null}
+        <DevDialog
+          dev={devDialog.dev}
+          open={devDialog.open}
+          count={devs.length}
+          project={project}
+          onOpenChange={(o) => setDevDialog({ open: o, dev: o ? devDialog.dev : null })}
+        />
+        <SprintDialog
+          sprint={sprintDialog.sprint}
+          open={sprintDialog.open}
+          count={sprints.length}
+          project={project}
+          onOpenChange={(o) => setSprintDialog({ open: o, sprint: o ? sprintDialog.sprint : null })}
+        />
       </div>
     </TooltipProvider>
   );
@@ -683,7 +602,7 @@ function EmptyState({
 }) {
   return (
     <div className="mx-auto max-w-md rounded-xl border border-dashed border-grid-line bg-surface p-10 text-center">
-      <h2 className="text-lg font-semibold">Vamos montar seu quadro do {project}</h2>
+      <h2 className="text-lg font-semibold">Vamos montar as alocações do {project}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Cadastre as pessoas e as sprints do {project}. Depois é só clicar em cada célula para alocar
         as demandas.
