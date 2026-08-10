@@ -16,7 +16,11 @@ const TOTAL_FLASHES = 18;
 // Nos 4 últimos flashes o pool encolhe para [vencedor, ...~40% dos elegíveis]:
 // é isso que produz a sensação de desaceleração.
 const SLOWDOWN_FROM = TOTAL_FLASHES - 4;
-const KEEP_CHANCE = 0.6;
+// Nome pela probabilidade real: Math.random() > 0.6 é verdade em ~40% das
+// vezes, e é isso que DESCARTA um elegível do pool round a round. O nome
+// anterior (KEEP_CHANCE) descrevia o efeito líquido, não a probabilidade em
+// si — enganava quem fosse ajustar "quero a desaceleração mais longa".
+const DISCARD_CHANCE = 0.6;
 
 export type RouletteApi = {
   drawn: ReadonlySet<string>; // e-mails
@@ -110,12 +114,19 @@ export function useRoulette(): RouletteApi {
       return;
     }
 
+    // Defesa contra um segundo spin() alcançar aqui de algum jeito futuro (hoje
+    // o botão desabilita e o guard de `spinning` no topo cobre): sem isto, o
+    // timer novo sobrescreveria a ref do antigo, que ficaria órfão — nunca
+    // limpo, disparando commitWinner() a cada 80ms para sempre, inclusive
+    // depois do unmount.
+    if (timerRef.current !== null) clearInterval(timerRef.current);
+
     let flashes = 0;
     timerRef.current = setInterval(() => {
       flashes += 1;
       const roundPool =
         flashes > SLOWDOWN_FROM
-          ? pool.filter((email) => email === winner || Math.random() > KEEP_CHANCE)
+          ? pool.filter((email) => email === winner || Math.random() > DISCARD_CHANCE)
           : pool;
       // O vencedor está sempre no roundPool, então o ?? nunca dispara na prática
       // — existe só para satisfazer noUncheckedIndexedAccess.
