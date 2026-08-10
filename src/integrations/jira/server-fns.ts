@@ -7,6 +7,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { IssueResponse, JiraProject, SprintResponse } from "@/lib/compromisso/types";
+import type { CycleTimeMode, CycleTimeResponse } from "@/lib/cycle-time/types";
 
 export const getJiraProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -45,4 +46,28 @@ export const getJiraIssues = createServerFn({ method: "GET" })
     await assertCanViewBoard(context.supabase, context.userId);
     const { fetchIssuesForSprint } = await import("./issues.server");
     return fetchIssuesForSprint(data.sprintId);
+  });
+
+export const getJiraCycleTime = createServerFn({ method: "GET" })
+  .validator((data: { project: string; mode: CycleTimeMode; force?: boolean }) => data)
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context, data }): Promise<CycleTimeResponse> => {
+    const { assertCanViewBoard } = await import("./access.server");
+    await assertCanViewBoard(context.supabase, context.userId);
+    const { fetchCycleTime } = await import("./cycle-time.server");
+    try {
+      return await fetchCycleTime(data.project, data.mode, data.force ?? false);
+    } catch (err) {
+      // Erro que cruza a fronteira do RPC é serializado por `message`. Sem
+      // este mapeamento a UI mostraria o corpo cru da resposta do Jira; com
+      // ele, mostra a tradução pt-BR de JiraError e o detalhe técnico fica só
+      // no log do servidor. As quatro server functions acima têm o mesmo
+      // defeito e NÃO são alteradas nesta demanda — fica registrado.
+      const { JiraError } = await import("./client.server");
+      if (err instanceof JiraError) {
+        console.error("[jira/cycle-time]", err.status, err.message);
+        throw new Error(err.clientMessage);
+      }
+      throw err;
+    }
   });
